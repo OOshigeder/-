@@ -1,0 +1,2547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>衡阳市企业信用监管平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ===== 全局基础样式 ===== */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; }
+        body { background:#f0f4f8; color:#1e293b; padding:20px; }
+        .app-container { max-width:1600px; margin:0 auto; }
+
+        /* ===== 顶部导航 ===== */
+        .header {
+            display:flex; flex-direction:column; align-items:center;
+            background: linear-gradient(135deg, #0b1a2e 0%, #1a2a3a 50%, #0f1f2f 100%);
+            padding:16px 28px 14px; border-radius:28px; color:#fff; margin-bottom:28px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.2);
+            border:1px solid rgba(255,255,255,0.06);
+        }
+        .header-title {
+            font-size:24px; font-weight:700; letter-spacing:1px;
+            display:flex; align-items:center; gap:12px;
+            margin-bottom:10px;
+        }
+        .header-title i { font-size:28px; color:#38bdf8; }
+        .header-title span { font-size:15px; opacity:0.7; font-weight:400; margin-left:6px; }
+        .header-stats {
+            display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+            gap:10px 18px; width:100%;
+        }
+        .header-stats .time-info {
+            font-size:13px; opacity:0.85; display:flex; flex-direction:column; line-height:1.3;
+            background:rgba(255,255,255,0.06); padding:4px 14px; border-radius:40px;
+            border:1px solid rgba(255,255,255,0.05);
+        }
+        .badge {
+            background:rgba(255,255,255,0.10); padding:6px 16px; border-radius:40px;
+            font-size:13px; display:inline-flex; align-items:center; gap:6px;
+            border:1px solid rgba(255,255,255,0.08); cursor:pointer; transition:0.2s;
+            backdrop-filter:blur(4px); white-space:nowrap;
+        }
+        .badge:hover { background:rgba(255,255,255,0.22); transform:translateY(-2px); }
+        .badge strong { font-weight:700; }
+        .btn {
+            padding:6px 18px; border:none; border-radius:40px; font-weight:600; font-size:13px;
+            cursor:pointer; transition:0.25s; display:inline-flex; align-items:center; gap:6px;
+            background:#fff; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+            white-space:nowrap;
+        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(0,0,0,0.15); }
+        .btn-success { background:#22c55e; color:#fff; }
+        .btn-success:hover { background:#16a34a; }
+        .btn-primary { background:#38bdf8; color:#0f172a; }
+        .btn-primary:hover { background:#7dd3fc; }
+        .btn-warning { background:#f59e0b; color:#fff; }
+        .btn-warning:hover { background:#d97706; }
+        .about-btn {
+            background:rgba(255,255,255,0.12); padding:6px 16px; border-radius:40px;
+            border:1px solid rgba(255,255,255,0.08); cursor:pointer; font-size:13px;
+            color:#fff; transition:0.2s; backdrop-filter:blur(4px);
+        }
+        .about-btn:hover { background:rgba(255,255,255,0.25); }
+
+        /* ===== 搜索区域 ===== */
+        .search-section {
+            background:rgba(255,255,255,0.75); backdrop-filter:blur(12px);
+            border-radius:24px; padding:14px 22px; margin-bottom:28px;
+            display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+            box-shadow:0 4px 24px rgba(0,0,0,0.04);
+            border:1px solid rgba(255,255,255,0.5);
+            position:relative;
+            z-index:50;
+        }
+        .search-wrapper {
+            display:flex; flex:1; min-width:200px; align-items:center;
+            position:relative;
+            overflow:visible;
+        }
+        .search-wrapper input {
+            flex:1; padding:10px 16px 10px 44px; border:1.5px solid rgba(0,0,0,0.08);
+            border-radius:40px; font-size:15px; outline:none; background:rgba(255,255,255,0.9);
+            transition:0.2s;
+        }
+        .search-wrapper input:focus { border-color:#38bdf8; background:#fff; box-shadow:0 0 0 3px rgba(56,189,248,0.15); }
+        .search-wrapper i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:#94a3b8; }
+        .search-wrapper .btn-search {
+            margin-left:8px; padding:8px 18px; border-radius:40px;
+            border:none; background:#38bdf8; color:#0f172a; font-weight:600;
+            cursor:pointer; transition:0.2s; white-space:nowrap;
+        }
+        .search-wrapper .btn-search:hover { background:#7dd3fc; }
+        .search-suggest {
+            position:absolute; top:calc(100% + 4px); left:0; right:0;
+            background:#fff; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.15);
+            max-height:260px; overflow-y:auto; z-index:9999; display:none;
+            border:1px solid #e2e8f0;
+        }
+        .search-suggest .suggest-item { padding:10px 16px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+        .search-suggest .suggest-item:hover { background:#f1f5f9; }
+        .filter-group { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+        .filter-group select {
+            padding:8px 16px; border-radius:40px; border:1.5px solid rgba(0,0,0,0.08);
+            background:rgba(255,255,255,0.9); font-size:14px; outline:none; cursor:pointer;
+        }
+        .filter-group select:focus { border-color:#38bdf8; }
+
+        /* ===== 卡片通用 ===== */
+        .card {
+            background:rgba(255,255,255,0.85); backdrop-filter:blur(8px);
+            border-radius:24px; padding:20px 24px 26px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.04);
+            border:1px solid rgba(255,255,255,0.6);
+            transition:0.2s;
+        }
+        .card:hover { box-shadow:0 12px 40px rgba(0,0,0,0.06); }
+        .card-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:16px; flex-wrap:wrap; gap:8px;
+        }
+        .card-header h3 {
+            font-size:17px; font-weight:600; display:flex; align-items:center; gap:10px;
+            color:#0f172a;
+        }
+        .card-header h3 i { color:#38bdf8; font-size:18px; }
+        .card-header .tag {
+            font-size:12px; background:rgba(0,0,0,0.04); padding:4px 14px;
+            border-radius:40px; color:#475569;
+        }
+        .chart-container { width:100%; height:300px; }
+        #heatmapChart { height:320px; margin-top:4px; }
+
+        .dashboard-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px; }
+        @media (max-width:1100px) { .dashboard-grid { grid-template-columns:1fr; } }
+
+        /* ===== 排行榜 ===== */
+        .rank-split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        @media (max-width:700px) { .rank-split { grid-template-columns:1fr; } }
+        .rank-column { max-height:350px; overflow-y:auto; }
+        .rank-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:5px 10px; border-radius:10px; background:rgba(0,0,0,0.02);
+            margin-bottom:4px; border-left:3px solid transparent; cursor:pointer;
+            transition:0.1s;
+        }
+        .rank-item:hover { background:rgba(0,0,0,0.04); }
+        .rank-item .rank-pos { font-weight:700; width:26px; color:#64748b; font-size:12px; }
+        .rank-item .rank-name { flex:1; font-weight:500; font-size:13px; margin-left:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .rank-item .rank-score { font-weight:600; font-size:14px; margin-left:6px; }
+        .rank-item .rank-badge { font-size:11px; padding:1px 10px; border-radius:40px; margin-left:6px; white-space:nowrap; font-weight:500; }
+        .badge-优良 { background:#22c55e; color:#fff; }
+        .badge-一般 { background:#3b82f6; color:#fff; }
+        .badge-关注 { background:#f59e0b; color:#fff; }
+        .badge-风险 { background:#ef4444; color:#fff; }
+        .rank-item.top1 { border-left-color:#facc15; background:#fefce8; }
+        .rank-item.top2 { border-left-color:#94a3b8; background:#f1f5f9; }
+        .rank-item.top3 { border-left-color:#fb923c; background:#fff7ed; }
+
+        /* ===== 三列：预警、高风险、待整改 ===== */
+        .three-cards-row {
+            display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; margin-bottom:28px;
+        }
+        @media (max-width:1000px) { .three-cards-row { grid-template-columns:1fr 1fr; } }
+        @media (max-width:700px) { .three-cards-row { grid-template-columns:1fr; } }
+
+        .alert-list, .rectify-list, .high-risk-list { 
+            max-height:220px; overflow-y:auto; 
+            display:flex; flex-direction:column;
+        }
+        .alert-list .empty-msg, .rectify-list .empty-msg, .high-risk-list .empty-msg {
+            flex:1; display:flex; align-items:center; justify-content:center;
+            padding:10px; color:#94a3b8; text-align:center; height:100%;
+        }
+
+        .alert-item, .rectify-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:8px 14px; border-radius:12px; margin-bottom:6px;
+            border-left:4px solid #ef4444; background:rgba(254,242,242,0.6);
+            font-size:13px; transition:0.1s; cursor:pointer; flex-wrap:wrap; gap:6px;
+            backdrop-filter:blur(4px);
+        }
+        .alert-item:hover, .rectify-item:hover { background:rgba(254,226,226,0.8); }
+        .alert-item.level-紧急 { border-left-color:#ef4444; background:rgba(254,242,242,0.7); }
+        .alert-item.level-高 { border-left-color:#f59e0b; background:rgba(254,243,199,0.7); }
+        .alert-item.level-中 { border-left-color:#3b82f6; background:rgba(219,234,254,0.7); }
+        .alert-item.level-较低 { border-left-color:#94a3b8; background:rgba(241,245,249,0.7); }
+        .alert-item .alert-name, .rectify-item .rectify-name { font-weight:500; flex-shrink:0; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .alert-item .alert-detail, .rectify-item .rectify-detail { font-size:12px; color:#64748b; flex:1; min-width:120px; word-break:break-word; }
+        .alert-item .alert-level, .rectify-item .rectify-level { font-size:11px; font-weight:600; padding:2px 10px; border-radius:40px; background:rgba(0,0,0,0.04); white-space:nowrap; flex-shrink:0; }
+        .rectify-item { border-left-color:#f59e0b; background:rgba(254,243,199,0.6); }
+        .rectify-item:hover { background:rgba(254,243,199,0.9); }
+        .rectify-item .btn-sm-success { display:none; }
+
+        .high-risk-item {
+            padding:6px 12px; border-bottom:1px solid rgba(0,0,0,0.04);
+            cursor:pointer; transition:0.1s; display:flex; align-items:center; gap:6px;
+        }
+        .high-risk-item:hover { background:rgba(0,0,0,0.02); }
+        .high-risk-item .hr-name { font-weight:500; flex:1; }
+        .high-risk-item .hr-badge { font-size:11px; padding:1px 10px; border-radius:40px; background:#ef4444; color:#fff; white-space:nowrap; }
+
+        /* ===== 底部三列 ===== */
+        .bottom-grid { display:grid; grid-template-columns:2fr 1fr 1fr; gap:24px; margin-top:12px; }
+        @media (max-width:1000px) { .bottom-grid { grid-template-columns:1fr 1fr; } .bottom-grid .qa-card { grid-column:1/-1; } }
+        @media (max-width:640px) { .bottom-grid { grid-template-columns:1fr; } }
+
+        .qa-card .qa-messages {
+            max-height:260px; overflow-y:auto; background:rgba(0,0,0,0.02);
+            border-radius:16px; padding:12px 16px; margin-bottom:12px;
+            display:flex; flex-direction:column; gap:8px;
+            border:1px solid rgba(0,0,0,0.04); min-height:140px;
+        }
+        .qa-msg { padding:10px 14px; border-radius:12px; font-size:14px; line-height:1.6; max-width:92%; }
+        .qa-msg.user { background:#38bdf8; color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+        .qa-msg.bot { background:#fff; border:1px solid rgba(0,0,0,0.06); align-self:flex-start; border-bottom-left-radius:4px; color:#1e293b; }
+        .qa-input-row { display:flex; gap:10px; margin-top:4px; }
+        .qa-input-row input { flex:1; padding:10px 16px; border-radius:40px; border:1.5px solid rgba(0,0,0,0.08); outline:none; font-size:14px; background:rgba(255,255,255,0.8); }
+        .qa-input-row input:focus { border-color:#38bdf8; }
+        .qa-input-row button { padding:10px 24px; border-radius:40px; border:none; background:#0f172a; color:#fff; font-weight:600; cursor:pointer; transition:0.2s; }
+        .qa-input-row button:hover { background:#1e293b; transform:scale(1.02); }
+
+        /* ===== 预警阈值卡片 ===== */
+        .threshold-card .threshold-row { display:flex; align-items:center; gap:12px; margin:12px 0 16px; flex-wrap:wrap; justify-content:center; }
+        .threshold-card .threshold-row input { width:100px; padding:8px 12px; border-radius:40px; border:1.5px solid rgba(0,0,0,0.08); font-size:15px; text-align:center; }
+        .threshold-card .btn-group { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+        /* ===== 上传卡片 ===== */
+        .upload-card .upload-zone {
+            border:2px dashed rgba(0,0,0,0.08); border-radius:16px; padding:20px 16px;
+            text-align:center; cursor:pointer; margin:8px 0 12px;
+            background:rgba(0,0,0,0.01); transition:0.2s;
+        }
+        .upload-card .upload-zone:hover { border-color:#38bdf8; background:rgba(56,189,248,0.04); }
+        .upload-card .file-info {
+            font-size:13px; background:rgba(0,0,0,0.04); padding:6px 14px; border-radius:40px;
+            display:inline-block; margin-top:6px; max-width:100%; word-break:break-all;
+            text-align:center; width:100%;
+        }
+        .upload-card .error-msg { color:#ef4444; background:#fef2f2; padding:8px 12px; border-radius:10px; font-size:13px; margin-top:6px; border:1px solid #fecaca; display:none; }
+        .upload-card .error-msg.show { display:block; }
+        .upload-card .btn-group { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+
+        /* ===== 模态框 ===== */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(8px);
+            display:none; align-items:center; justify-content:center; z-index:999; padding:20px;
+        }
+        .modal-overlay.active { display:flex; }
+        .modal-box {
+            background:rgba(255,255,255,0.95); backdrop-filter:blur(12px);
+            border-radius:28px; max-width:900px; width:100%; max-height:90vh;
+            overflow-y:auto; padding:28px 32px;
+            box-shadow:0 24px 80px rgba(0,0,0,0.25);
+            position:relative; animation:fadeSlide 0.3s ease;
+            border:1px solid rgba(255,255,255,0.3);
+        }
+        @keyframes fadeSlide { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:translateY(0);} }
+        .modal-box .modal-close { position:sticky; top:0; float:right; background:transparent; border:none; font-size:28px; cursor:pointer; color:#94a3b8; z-index:10; padding:0 4px; }
+        .modal-box .modal-close:hover { color:#0f172a; }
+        .modal-box h2 { margin-bottom:6px; font-size:22px; padding-right:40px; }
+        .modal-box .modal-sub { color:#64748b; font-size:14px; margin-bottom:16px; }
+
+        /* 日期选择器 */
+        .date-picker-wrapper {
+            display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:20px;
+        }
+        .date-picker-wrapper .picker-row {
+            display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+        }
+        .date-picker-wrapper .picker-row label { font-weight:500; color:#475569; }
+        .date-picker-wrapper .picker-row input {
+            padding:8px 14px; border-radius:40px; border:1.5px solid #e2e8f0; font-size:14px; outline:none; background:#fff;
+        }
+        .date-picker-wrapper .picker-row input:focus { border-color:#38bdf8; }
+        .date-picker-wrapper .btn-group {
+            display:flex; gap:10px; justify-content:center; margin-top:4px;
+        }
+
+        /* ===== 详情页 ===== */
+        .detail-score-area {
+            background:linear-gradient(135deg,#0b1a2e,#1a2a3a);
+            color:#fff; padding:24px 28px; border-radius:20px;
+            margin-bottom:24px; display:flex; flex-wrap:wrap;
+            justify-content:space-between; align-items:center;
+        }
+        .detail-score-area .big-score { font-size:34px; font-weight:700; }
+        .detail-score-area .big-grade { font-size:22px; padding:6px 24px; background:rgba(255,255,255,0.15); border-radius:40px; }
+        .detail-score-area .big-risk { font-size:20px; }
+
+        .detail-section {
+            background:rgba(0,0,0,0.02); border-radius:20px; padding:18px 24px;
+            margin-bottom:18px; border:1px solid rgba(0,0,0,0.04);
+        }
+        .detail-section h4 { font-size:16px; font-weight:600; color:#0f172a; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+        .detail-section h4 i { color:#38bdf8; }
+        .detail-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px 32px; }
+        .detail-grid-2 .item { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.04); }
+        .detail-grid-2 .item .label { color:#64748b; }
+        .detail-grid-2 .item .value { font-weight:500; text-align:right; }
+        .detail-grid-2 .item.reward-full { grid-column:1/-1; flex-wrap:wrap; }
+        .detail-grid-2 .item.reward-full .value { text-align:left; word-break:break-word; white-space:normal; }
+
+        .detail-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px 24px; }
+        @media (max-width:600px) { .detail-grid-2, .detail-grid-3 { grid-template-columns:1fr; } }
+        .detail-grid-3 .item { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(0,0,0,0.04); }
+        .detail-grid-3 .item .label { color:#64748b; }
+        .detail-grid-3 .item .value { font-weight:500; text-align:right; }
+        .detail-suggestion {
+            background:rgba(56,189,248,0.06); border-left:4px solid #38bdf8;
+            padding:12px 16px; border-radius:10px; margin-top:8px;
+        }
+        .detail-suggestion strong { color:#0f172a; }
+
+        .risk-reason { 
+            background:#fff7ed; border-left:4px solid #ea580c; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+        }
+        .risk-reason strong { color:#9a3412; }
+
+        .alert-reason { 
+            background:#fee2e2; border-left:4px solid #dc2626; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+        }
+        .alert-reason strong { color:#991b1b; }
+
+        .rectify-reason { 
+            background:#fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+            display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+        }
+        .rectify-reason strong { color:#92400e; }
+        .rectify-reason .btn-sm-success { 
+            font-size:12px; padding:4px 12px; border-radius:40px; background:#22c55e; color:#fff; border:none; cursor:pointer;
+            transition:0.2s; margin-left:10px; flex-shrink:0;
+        }
+        .rectify-reason .btn-sm-success:hover { background:#16a34a; }
+
+        .punish-reason { 
+            background:#dbeafe; border-left:4px solid #3b82f6; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+        }
+        .punish-reason strong { color:#1e40af; }
+
+        .status-reason {
+            background:#e0e7ff; border-left:4px solid #6366f1; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+            display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+        }
+        .status-reason strong { color:#3730a3; }
+        .status-reason .status-item { display:inline-flex; gap:20px; flex-wrap:wrap; }
+
+        .reward-reason {
+            background:#dcfce7; border-left:4px solid #22c55e; padding:12px 16px; border-radius:10px; margin-top:8px; font-size:14px;
+        }
+        .reward-reason strong { color:#166534; }
+
+        .list-item-detailed {
+            display:flex; flex-direction:column; padding:12px 16px;
+            background:rgba(0,0,0,0.02); border-radius:14px; margin-bottom:8px;
+            border-left:4px solid #ef4444; cursor:pointer; transition:0.1s;
+        }
+        .list-item-detailed:hover { background:rgba(0,0,0,0.04); }
+        .list-item-detailed .top-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
+        .list-item-detailed .top-row .name { font-weight:600; font-size:15px; }
+        .list-item-detailed .top-row .badge-level { font-size:12px; padding:2px 12px; border-radius:40px; background:rgba(0,0,0,0.04); }
+        .list-item-detailed .detail-row { margin-top:6px; font-size:13px; color:#475569; display:flex; flex-wrap:wrap; gap:8px; }
+        .list-item-detailed .detail-row .tag { background:rgba(0,0,0,0.04); padding:1px 10px; border-radius:40px; font-size:12px; }
+        .list-item-detailed .suggestion-row { margin-top:8px; font-size:13px; background:rgba(56,189,248,0.06); padding:8px 12px; border-radius:10px; border-left:3px solid #38bdf8; }
+
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; max-height:60vh; overflow-y:auto; }
+        @media (max-width:600px) { .form-grid { grid-template-columns:1fr; } }
+        .form-grid .field { display:flex; flex-direction:column; gap:4px; }
+        .form-grid .field label { font-size:13px; font-weight:500; color:#475569; }
+        .form-grid .field label .required { color:#ef4444; }
+        .form-grid .field input, .form-grid .field select { padding:8px 12px; border-radius:10px; border:1.5px solid rgba(0,0,0,0.08); font-size:13px; outline:none; }
+        .modal-box .form-actions { margin-top:18px; display:flex; gap:12px; justify-content:flex-end; }
+
+        .dept-download { display:inline-block; margin:8px 0; color:#38bdf8; cursor:pointer; text-decoration:underline; }
+        .heatmap-popup-list { max-height:400px; overflow-y:auto; }
+        .heatmap-popup-item { padding:6px 12px; border-bottom:1px solid rgba(0,0,0,0.04); cursor:pointer; }
+        .heatmap-popup-item:hover { background:rgba(0,0,0,0.02); }
+
+        .page-overlay { position:fixed; inset:0; background:rgba(255,255,255,0.95); backdrop-filter:blur(12px); z-index:9999; padding:30px 40px; overflow-y:auto; display:none; }
+        .page-overlay.active { display:block; }
+        .page-overlay .back-btn { position:sticky; top:0; background:transparent; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.04); margin-bottom:20px; display:flex; align-items:center; gap:12px; }
+        .page-overlay .back-btn button { padding:8px 24px; border-radius:40px; border:none; background:rgba(0,0,0,0.04); cursor:pointer; font-weight:500; }
+        .page-overlay .back-btn button:hover { background:rgba(0,0,0,0.08); }
+
+        .about-content { display:none; }
+        .trend-event-item { padding:6px 12px; border-bottom:1px solid rgba(0,0,0,0.04); cursor:pointer; }
+        .trend-event-item:hover { background:rgba(0,0,0,0.02); }
+
+        #loadingOverlay {
+            position:fixed; inset:0; background:rgba(255,255,255,0.85); backdrop-filter:blur(6px);
+            display:none; align-items:center; justify-content:center; z-index:99999;
+            flex-direction:column; gap:20px;
+        }
+        #loadingOverlay.active { display:flex; }
+        #loadingOverlay .spinner {
+            width:50px; height:50px; border:5px solid rgba(0,0,0,0.06); border-top-color:#38bdf8;
+            border-radius:50%; animation:spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        #loadingOverlay p { font-size:18px; color:#0f172a; font-weight:500; }
+
+        .hidden-btn { display:none !important; }
+
+        .search-result-item {
+            padding:8px 12px; border-bottom:1px solid rgba(0,0,0,0.04);
+            cursor:pointer; transition:0.1s;
+        }
+        .search-result-item:hover { background:rgba(0,0,0,0.02); }
+        .search-result-item .sr-name { font-weight:500; }
+        .search-result-item .sr-code { font-size:12px; color:#94a3b8; margin-left:8px; }
+
+        @media (max-width:640px) {
+            .header { padding:12px 16px; }
+            .header-title { font-size:20px; flex-wrap:wrap; justify-content:center; }
+            .header-stats { gap:6px; }
+            .search-section { flex-direction:column; align-items:stretch; }
+            .dashboard-grid { grid-template-columns:1fr; }
+            .three-cards-row { grid-template-columns:1fr; }
+            .bottom-grid { grid-template-columns:1fr; }
+            .modal-box { padding:20px; }
+            .detail-score-area { flex-direction:column; align-items:flex-start; gap:10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩 -->
+    <div id="loadingOverlay"><div class="spinner"></div><p>数据加载中，请稍候...</p></div>
+
+    <div class="app-container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-title">
+                <i class="fas fa-chart-line"></i>
+                衡阳市企业信用监管平台 <span>智能可视化大屏</span>
+            </div>
+            <div class="header-stats">
+                <div class="time-info">
+                    <span id="currentTimeDisplay">--</span>
+                    <span class="update-time" id="dataUpdateDisplay">数据更新时间: 未更新</span>
+                </div>
+                <span class="badge"><i class="fas fa-database"></i> 已接入 <strong id="totalCount">0</strong> 家</span>
+                <span class="badge" id="riskBadge" onclick="window.showRiskList()"><i class="fas fa-exclamation-triangle" style="color:#facc15;"></i> 风险企业 <strong id="riskCount">0</strong></span>
+                <span class="badge" onclick="showAlertList()"><i class="fas fa-bell" style="color:#38bdf8;"></i> 预警 <strong id="alertCount">0</strong></span>
+                <span class="badge" onclick="showRectifyList()"><i class="fas fa-clock" style="color:#f59e0b;"></i> 待整改 <strong id="rectifyCount">0</strong></span>
+                <span class="badge" onclick="showExcellentList()"><i class="fas fa-star" style="color:#facc15;"></i> 优秀企业 <strong id="excellentCount">0</strong></span>
+                <button class="btn btn-success" onclick="openAddModal()"><i class="fas fa-plus"></i> 手动添加</button>
+                <button class="btn btn-primary" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-upload"></i> 批量上传</button>
+                <input type="file" id="fileUpload" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleUpload(event)">
+            </div>
+        </header>
+
+        <!-- 搜索区域 -->
+        <section class="search-section">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="搜索企业名称或统一社会信用代码 ..." oninput="onSearchInput()" onfocus="onSearchInput()" onkeydown="if(event.key==='Enter') doSearch()">
+                <button class="btn-search" onclick="doSearch()"><i class="fas fa-search"></i> 查找</button>
+                <div class="search-suggest" id="searchSuggest"></div>
+            </div>
+            <div class="filter-group">
+                <select id="filterDistrict" onchange="applyFilters()">
+                    <option value="">全部区县</option>
+                    <option value="雁峰区">雁峰区</option><option value="石鼓区">石鼓区</option><option value="珠晖区">珠晖区</option>
+                    <option value="蒸湘区">蒸湘区</option><option value="南岳区">南岳区</option><option value="衡阳县">衡阳县</option>
+                    <option value="衡南县">衡南县</option><option value="衡山县">衡山县</option><option value="衡东县">衡东县</option>
+                    <option value="祁东县">祁东县</option><option value="耒阳市">耒阳市</option><option value="常宁市">常宁市</option>
+                    <option value="其他/未知">其他/未知</option>
+                </select>
+                <select id="filterRisk" onchange="applyFilters()">
+                    <option value="">全部等级</option>
+                    <option value="信用优良">信用优良</option>
+                    <option value="信用一般">信用一般</option>
+                    <option value="信用关注">信用关注</option>
+                    <option value="信用风险">信用风险</option>
+                </select>
+                <button class="btn btn-primary" onclick="applyFilters()" style="padding:6px 16px;"><i class="fas fa-sliders-h"></i> 筛选</button>
+                <button class="btn" onclick="resetFilters()" style="padding:6px 16px;background:rgba(0,0,0,0.04);">重置</button>
+            </div>
+        </section>
+
+        <!-- 仪表盘 -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-map"></i> 区县风险热力图</h3><span class="tag">点击格子查看企业</span></div>
+                <div class="chart-container" id="heatmapChart"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-trophy"></i> 信用得分排行榜</h3><span class="tag">前50 / 后50</span></div>
+                <div class="rank-split">
+                    <div class="rank-column" id="rankTop"><div class="col-title">🏆 信用得分最高</div><div style="padding:10px 0;color:#94a3b8;">暂无数据</div></div>
+                    <div class="rank-column" id="rankBottom"><div class="col-title">⚠️ 信用得分待提升</div><div style="padding:10px 0;color:#94a3b8;">暂无数据</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-wave-square"></i> 风险趋势（近三年）</h3><span class="tag">点击折线节点查看具体事件</span></div>
+                <div class="chart-container" id="trendChart"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-chart-pie"></i> 各等级维度雷达图</h3><span class="tag">六维对比</span></div>
+                <div class="chart-container" id="radarChart"></div>
+            </div>
+        </div>
+
+        <!-- 三列：预警、高风险、待整改 -->
+        <div class="three-cards-row">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bell" style="color:#ef4444;"></i> 监管风险自动预警</h3>
+                    <span class="tag">按风险概率降序</span>
+                    <button class="btn btn-sm btn-sm-primary" onclick="refreshAlerts()">刷新</button>
+                </div>
+                <div id="alertListContainer" class="alert-list">
+                    <div class="empty-msg">暂无预警信息</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> 高风险企业</h3>
+                    <span class="tag">（信用风险+预警+待整改）</span>
+                </div>
+                <div id="highRiskList" class="high-risk-list">
+                    <div class="empty-msg">暂无高风险企业</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-clock" style="color:#f59e0b;"></i> 待整改企业</h3>
+                    <span class="tag" style="font-size:11px;">（近一年存在司法/行政处罚或记录）</span>
+                    <button class="btn btn-sm btn-sm-primary" onclick="refreshRectify()">刷新</button>
+                </div>
+                <div id="rectifyListContainer" class="rectify-list">
+                    <div class="empty-msg">暂无待整改企业</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部三列 -->
+        <div class="bottom-grid">
+            <div class="card qa-card">
+                <div class="card-header"><h3><i class="fas fa-comment-dots"></i> 智能问答助手</h3><span class="tag">支持企业/地市/业务查询</span></div>
+                <div class="qa-messages" id="qaMessages">
+                    <div class="qa-msg bot">👋 您好！我是信用监管助手。<br>• 输入企业名称（支持模糊）获取得分与等级<br>• 输入'耒阳市总体情况'查看区县统计<br>• 输入'如何提升'获取改进建议<br>• 输入'预警'、'整改'、'奖惩'等获取专业解读</div>
+                </div>
+                <div class="qa-input-row">
+                    <input type="text" id="qaInput" placeholder="输入您的问题..." onkeydown="if(event.key==='Enter') askQuestion()">
+                    <button onclick="askQuestion()"><i class="fas fa-paper-plane"></i> 发送</button>
+                </div>
+            </div>
+            <div class="card threshold-card">
+                <div class="card-header"><h3><i class="fas fa-sliders-h"></i> 预警阈值</h3><span class="tag">Logistic</span></div>
+                <p class="text-muted" style="font-size:13px;margin-bottom:6px;text-align:center;">调节后重新计算预警概率</p>
+                <div class="threshold-row">
+                    <label>阈值 (0~1):</label>
+                    <input type="number" id="thresholdInput" value="0.06" min="0" max="1" step="0.01">
+                    <span class="hint" id="thresholdHint">当前 0.06</span>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="updateThreshold()" style="padding:6px 16px;">应用阈值</button>
+                    <button class="btn" onclick="document.getElementById('thresholdInput').value='0.06';updateThreshold();" style="padding:6px 16px;background:rgba(0,0,0,0.04);">重置</button>
+                    <button class="btn" onclick="calcOptimalThreshold()" style="padding:6px 16px;background:rgba(0,0,0,0.04);">计算最优</button>
+                </div>
+                <div style="margin-top:12px;font-size:13px;color:#475569;text-align:center;">
+                    <span>当前预警企业: <strong id="thresholdRiskCount">0</strong> 家</span>
+                    <span style="margin-left:14px;">平均风险概率: <strong id="avgRiskProb">--</strong></span>
+                </div>
+            </div>
+            <div class="card upload-card">
+                <div class="card-header"><h3><i class="fas fa-file-upload"></i> 数据管理</h3><span class="tag">Excel / CSV / 手动</span></div>
+                <div class="upload-zone" onclick="document.getElementById('fileUpload').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击上传数据文件</p>
+                    <div class="sub">支持 .csv .xlsx .xls，首行为字段名</div>
+                </div>
+                <div id="uploadError" class="error-msg"></div>
+                <div class="btn-group">
+                    <button class="btn" onclick="exportTemplate()" style="background:rgba(0,0,0,0.04);padding:6px 16px;"><i class="fas fa-download"></i> 下载模板</button>
+                    <button class="btn" id="loadSampleBtn" onclick="loadSampleData()" style="background:rgba(0,0,0,0.04);padding:6px 16px;"><i class="fas fa-table"></i> 加载示例</button>
+                    <button class="btn btn-success" onclick="openAddModal()" style="padding:6px 16px;"><i class="fas fa-plus"></i> 手动添加</button>
+                    <button class="btn btn-warning" onclick="departmentUpload()" style="padding:6px 16px;"><i class="fas fa-building"></i> 部门上传</button>
+                </div>
+                <div id="uploadStatus" class="file-info" style="margin-top:10px;">未上传文件</div>
+            </div>
+        </div>
+
+        <!-- 模态框 -->
+        <div class="modal-overlay" id="addModal"><div class="modal-box"><button class="modal-close" onclick="closeAddModal()">&times;</button><h2>手动添加企业</h2><div class="modal-sub">带 <span style="color:#ef4444;">*</span> 为必填</div><div class="form-grid" id="addFormGrid"></div><div class="form-actions"><button class="btn" onclick="closeAddModal()" style="background:rgba(0,0,0,0.04);">取消</button><button class="btn btn-primary" onclick="submitManualAdd()"><i class="fas fa-save"></i> 保存企业</button></div></div></div>
+        <div class="modal-overlay risk-list-modal" id="riskListModal"><div class="modal-box"><button class="modal-close" onclick="closeRiskList()">&times;</button><h2>风险企业列表</h2><div class="modal-sub">信用等级为“信用风险”的企业</div><div id="riskListContainer" style="max-height:60vh;overflow-y:auto;"></div></div></div>
+        <div class="modal-overlay" id="alertModal"><div class="modal-box"><button class="modal-close" onclick="closeAlertModal()">&times;</button><h2>预警详情</h2><div id="alertDetailContainer"></div></div></div>
+        <div class="modal-overlay" id="rectifyModal"><div class="modal-box"><button class="modal-close" onclick="closeRectifyModal()">&times;</button><h2>待整改企业详情</h2><div id="rectifyDetailContainer"></div></div></div>
+        <div class="modal-overlay" id="excellentModal"><div class="modal-box"><button class="modal-close" onclick="closeExcellentModal()">&times;</button><h2>优秀企业列表</h2><div class="modal-sub">信用优良且无待整改</div><div id="excellentContainer"></div></div></div>
+        <div class="modal-overlay" id="heatmapModal"><div class="modal-box"><button class="modal-close" onclick="closeHeatmapModal()">&times;</button><h2 id="heatmapModalTitle">企业列表</h2><div id="heatmapModalContent" class="heatmap-popup-list"></div></div></div>
+        <div class="modal-overlay" id="trendModal"><div class="modal-box"><button class="modal-close" onclick="closeTrendModal()">&times;</button><h2 id="trendModalTitle">事件详情</h2><div id="trendModalContent" class="heatmap-popup-list"></div></div></div>
+        <div class="modal-overlay" id="deptModal"><div class="modal-box"><button class="modal-close" onclick="closeDeptModal()">&times;</button><h2>部门数据协同推送</h2><p class="text-muted">请上传部门专属数据（格式同主模板，将自动合并并重算）</p>
+            <div style="margin:12px 0;"><span class="dept-download" onclick="downloadDeptTemplate()"><i class="fas fa-download"></i> 下载部门上传模板（同主模板）</span></div>
+            <input type="file" id="deptFileUpload" accept=".xlsx,.xls,.csv" style="margin:12px 0;" onchange="handleDeptUpload(event)">
+            <div id="deptStatus" class="file-info">未上传</div>
+        </div></div>
+        <div class="modal-overlay" id="searchResultModal">
+            <div class="modal-box">
+                <button class="modal-close" onclick="closeSearchResult()">&times;</button>
+                <h2>搜索结果</h2>
+                <div class="modal-sub" id="searchResultSub">找到 0 家企业</div>
+                <div id="searchResultContainer" style="max-height:60vh;overflow-y:auto;"></div>
+            </div>
+        </div>
+
+        <!-- 全屏详情页 -->
+        <div class="page-overlay" id="detailPage">
+            <div class="back-btn">
+                <button onclick="closeDetailPage()"><i class="fas fa-arrow-left"></i> 返回大屏</button>
+                <span style="font-weight:600;font-size:18px;" id="detailPageTitle">企业详情</span>
+            </div>
+            <div id="detailPageContent"></div>
+        </div>
+
+        <!-- 算法说明已删除 -->
+        <div class="page-overlay" id="aboutPage" style="display:none;"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- JavaScript -->
+    <!-- ============================================================ -->
+    <script>
+    // ================================================================
+    // 模块1：全局状态与配置
+    // ================================================================
+    let allEnterprises = [];
+    let filteredEnterprises = [];
+    let scoredResults = [];
+    let riskThreshold = 0.06;
+    let dataUpdateTime = '';
+    let trendDataMap = {};
+    let loadingOverlay = document.getElementById('loadingOverlay');
+
+    const WEIGHTS = {
+        public: { judicial: 0.052520974, admin: 0.049808992, official: 0.051016919 + 0.676424157 },
+        industry: { qualification: 0.136426331+0.083480229+0.090297604, innovation: 0.097208172+0.129687333+0.135340910, stability: 0.025059315+0.025056338+0.027443768, reserved: 0.25 },
+        market: { sentiment: 0.5, topic: 0.5 }
+    };
+    const LR_COEFFS = { coeffs: [0.277,0.100,0.070,0.466,0.563,0.085,0.008,0.771,-0.414,1.859,-3.661], intercept: 0 };
+    const ALL_FIELDS = [
+        '企业名称','所属区县','统一社会信用代码','法定代表人','企业规模','注册资本（万人民币）','实缴资本',
+        '成立日期','核准日期','营业期限','所属省份','所属城市','企业(机构)类型','国标行业门类',
+        '国标行业大类','国标行业中类','曾用名','英文名','纳税人识别号','注册号','组织机构代码',
+        '参保人数','参保人数所属年报','有效手机号','更多电话','注册地址','最新年报地址','通信地址',
+        '网址','邮箱','其他邮箱','经营范围','登记状态',
+        '诚实守信','信用承诺','信用评价','12315投诉数',
+        '被执行人_数量','被执行人_最近日期','失信被执行人_数量','失信被执行人_最近日期',
+        '限制消费令_数量','限制消费令_最近日期','行政处罚_数量','行政处罚_最近日期',
+        '终本案件_数量','终本案件_最近日期','司法案件_数量',
+        '标准信息_数量','供应商_数量','客户_数量','融资历程_数量',
+        '变更记录_总数','法定代表人变更_次数','注册资本变更_次数','最近变更日期',
+        '对外投资_数量','对外投资_存续数量',
+        '商标_数量','商标_已注册数量','专利_数量','发明专利_数量','专利_有效数量',
+        '资质证书_数量','资质证书_有效数量','是否有食品生产许可证_数量','高新技术企业认定_数量',
+        '股东_数量','主要人员_数量','历史风险事件_合计','是否历史风险企业','科创属性_合计',
+        '评论情感得分','主题维度得分'
+    ];
+
+    // ================================================================
+    // 模块2：工具函数
+    // ================================================================
+    function getVal(obj, path, def=0) {
+        try { const val = obj[path]; if (val===undefined || val===null) return def; const num = Number(val); return isNaN(num)?def:num; } catch(e){return def;}
+    }
+    function round2(v){ return Math.round(v*100)/100; }
+    function euclideanDist(a,b){ let s=0; for(let i=0;i<a.length;i++) s+=(a[i]-b[i])**2; return Math.sqrt(s); }
+    function kmeans(points,k,maxIter=100){
+        if(points.length<k) return points.map(()=>0);
+        let centers=[];
+        const indices=Array.from({length:points.length},(_,i)=>i);
+        for(let i=0;i<k;i++){ const randIdx=indices.splice(Math.floor(Math.random()*indices.length),1)[0]; centers.push([...points[randIdx]]); }
+        let labels=new Array(points.length).fill(0);
+        for(let iter=0;iter<maxIter;iter++){
+            let changed=false;
+            for(let i=0;i<points.length;i++){
+                let minDist=Infinity,best=0;
+                for(let c=0;c<centers.length;c++){ const dist=euclideanDist(points[i],centers[c]); if(dist<minDist){minDist=dist;best=c;} }
+                if(labels[i]!==best){ changed=true; labels[i]=best; }
+            }
+            if(!changed) break;
+            const newCenters=Array.from({length:k},()=>new Array(points[0].length).fill(0));
+            const counts=new Array(k).fill(0);
+            for(let i=0;i<points.length;i++){ const l=labels[i]; counts[l]++; for(let d=0;d<points[i].length;d++) newCenters[l][d]+=points[i][d]; }
+            for(let c=0;c<k;c++){ if(counts[c]>0){ for(let d=0;d<points[0].length;d++) newCenters[c][d]/=counts[c]; } else { const ri=Math.floor(Math.random()*points.length); newCenters[c]=[...points[ri]]; } }
+            centers=newCenters;
+        }
+        const clusterScores=centers.map((c,idx)=>{ const pts=points.filter((_,i)=>labels[i]===idx); const avg=pts.length>0?pts.reduce((s,p)=>s+p.reduce((a,b)=>a+b,0),0)/pts.length:0; return {idx,avg}; });
+        clusterScores.sort((a,b)=>b.avg-a.avg);
+        const rankMap={}; clusterScores.forEach((item,rank)=>{ rankMap[item.idx]=rank; });
+        return labels.map(l=>rankMap[l]);
+    }
+    function logisticPredict(features){
+        let z=LR_COEFFS.intercept;
+        for(let i=0;i<features.length;i++) z+=LR_COEFFS.coeffs[i]*features[i];
+        return 1/(1+Math.exp(-z));
+    }
+    function hasMarketData(ent){
+        const s=getVal(ent,'评论情感得分',null);
+        const t=getVal(ent,'主题维度得分',null);
+        return (s!==null && s!==undefined && s!=='' && t!==null && t!==undefined && t!=='');
+    }
+
+    // ================================================================
+    // 模块3：核心计算（得分、等级、风险概率、异常检测）
+    // ================================================================
+    function computeScoresAndGrades(enterprises){
+        if(!enterprises||enterprises.length===0) return [];
+        // 提取六个维度的原始值
+        const rawDims = enterprises.map(ent=>{
+            const judicial = getVal(ent,'被执行人_数量') + getVal(ent,'失信被执行人_数量') +
+                             getVal(ent,'限制消费令_数量') + getVal(ent,'终本案件_数量') + getVal(ent,'司法案件_数量');
+            const admin = getVal(ent,'行政处罚_数量');
+            const official = getVal(ent,'诚实守信') + getVal(ent,'信用承诺');
+            const qual = getVal(ent,'是否有食品生产许可证_数量') + getVal(ent,'资质证书_数量') + getVal(ent,'资质证书_有效数量');
+            const innov = getVal(ent,'商标_数量') + getVal(ent,'专利_数量') + getVal(ent,'高新技术企业认定_数量');
+            const stab = getVal(ent,'法定代表人变更_次数') + getVal(ent,'注册资本变更_次数') + getVal(ent,'变更记录_总数');
+            return {judicial, admin, official, qual, innov, stab};
+        });
+        // Min-Max标准化（负向反向）
+        const dimKeys = ['judicial','admin','official','qual','innov','stab'];
+        const scaled = {};
+        for(const key of dimKeys){
+            const arr = rawDims.map(d=>d[key]||0);
+            const min = Math.min(...arr), max = Math.max(...arr), range = max-min;
+            scaled[key] = arr.map(v=>{
+                if(range===0) return 0.5;
+                if(key==='judicial' || key==='admin' || key==='stab') return 1 - (v-min)/range;
+                return (v-min)/range;
+            });
+        }
+        const results = [];
+        for(let i=0;i<enterprises.length;i++){
+            const ent = enterprises[i];
+            const j = scaled.judicial[i], adm = scaled.admin[i], off = scaled.official[i];
+            const q = scaled.qual[i], inn = scaled.innov[i], st = scaled.stab[i];
+            // 公共得分
+            const pubW = WEIGHTS.public;
+            const pubTotal = pubW.judicial + pubW.admin + pubW.official;
+            const pubScore = (j*pubW.judicial + adm*pubW.admin + off*pubW.official) / pubTotal;
+            // 行业得分（含预留25%满分）
+            const indW = WEIGHTS.industry;
+            const reservedScore = 1.0;
+            const indTotal = indW.qualification + indW.innovation + indW.stability + indW.reserved;
+            const indScore = (q*indW.qualification + inn*indW.innovation + st*indW.stability + reservedScore*indW.reserved) / indTotal;
+            // 市场得分
+            let marketScore = 0;
+            const hasMarket = hasMarketData(ent);
+            if(hasMarket){
+                const sent = getVal(ent,'评论情感得分',0.5);
+                const topic = getVal(ent,'主题维度得分',0.5);
+                marketScore = sent*0.5 + topic*0.5;
+            }
+            // 综合得分
+            let totalScore;
+            if(hasMarket) totalScore = 0.5 * pubScore + 0.3 * indScore + 0.2 * marketScore;
+            else totalScore = 0.625 * pubScore + 0.375 * indScore;
+            totalScore = totalScore * 100;
+            results.push({
+                ent: ent,
+                judicial: j, admin: adm, official: off,
+                qualification: q, innovation: inn, stability: st,
+                publicScore: pubScore, industryScore: indScore, marketScore: marketScore,
+                totalScore: totalScore/100,
+                hasMarket: hasMarket,
+            });
+        }
+        // K-means聚类
+        const points = results.map(r=>[r.judicial, r.admin, r.official, r.qualification, r.innovation, r.stability]);
+        const labels = kmeans(points, 4);
+        const gradeMap = {0:'信用优良',1:'信用一般',2:'信用关注',3:'信用风险'};
+        for(let i=0;i<results.length;i++){
+            results[i].clusterLabel = labels[i];
+            results[i].grade = gradeMap[labels[i]] || '信用一般';
+        }
+        // Logistic回归预测
+        const lrVars = ['诚实守信','信用承诺','变更记录_总数','法定代表人变更_次数','注册资本变更_次数',
+                        '商标_数量','专利_数量','资质证书_数量','资质证书_有效数量',
+                        '是否有食品生产许可证_数量','高新技术企业认定_数量'];
+        const allFeatureValues = enterprises.map(e => lrVars.map(f => getVal(e, f, 0)));
+        const featureScaled = [];
+        for(let j=0; j<lrVars.length; j++){
+            const vals = allFeatureValues.map(arr => arr[j]);
+            const min = Math.min(...vals);
+            const max = Math.max(...vals);
+            const range = max - min;
+            if(range === 0) featureScaled.push(vals.map(()=>0.5));
+            else featureScaled.push(vals.map(v => (v - min) / range));
+        }
+        for(let i=0; i<results.length; i++){
+            const features = featureScaled.map(arr => arr[i]);
+            const prob = logisticPredict(features);
+            results[i].riskProb = prob;
+            results[i].riskPredicted = prob >= riskThreshold ? 1 : 0;
+            results[i].actualRisk = getVal(enterprises[i], '是否历史风险企业', 0);
+        }
+        return results;
+    }
+
+    // 负向指标异常检测（用于预警）
+    function getNegativeAbnormal(ent, allResults) {
+        const negVars = [
+            '变更记录总数','法定代表人变更次数','注册资本变更次数',
+            '被执行人数量','失信被执行人数量','限制消费令数量',
+            '终本案件数量','司法案件数量','行政处罚数量'
+        ];
+        const fieldMap = {
+            '变更记录总数':'变更记录_总数',
+            '法定代表人变更次数':'法定代表人变更_次数',
+            '注册资本变更次数':'注册资本变更_次数',
+            '被执行人数量':'被执行人_数量',
+            '失信被执行人数量':'失信被执行人_数量',
+            '限制消费令数量':'限制消费令_数量',
+            '终本案件数量':'终本案件_数量',
+            '司法案件数量':'司法案件_数量',
+            '行政处罚数量':'行政处罚_数量'
+        };
+        const allVals = negVars.map(v => allResults.map(r => getVal(r.ent, fieldMap[v], 0)));
+        const means = allVals.map(col => col.reduce((a,b)=>a+b,0)/col.length);
+        const stds = allVals.map(col => {
+            const mean = means[allVals.indexOf(col)];
+            return Math.sqrt(col.reduce((a,b)=>a+(b-mean)**2,0)/col.length);
+        });
+        const entVals = negVars.map(v => getVal(ent, fieldMap[v], 0));
+        let abnormalParts = [];
+        negVars.forEach((v, idx) => {
+            const val = entVals[idx];
+            const mean = means[idx];
+            const std = stds[idx];
+            if (std > 0 && val > mean + 1.5 * std) {
+                abnormalParts.push(`${v}偏高（${val}）`);
+            }
+        });
+        return abnormalParts;
+    }
+
+    // ================================================================
+    // 模块4：数据加载（含预设示例数据）
+    // ================================================================
+    function generateSampleData(n=20) {
+        const names = ['耒阳市江头生态农业开发有限公司','湖南过龙岭生态农业科技股份有限公司','衡南县南枫油茶产销专业合作社','衡东县红拓农业综合开发有限公司',
+            '耒阳市利荆农林种植专业合作社','衡东富盈种植专业合作社','衡南县林泉畜禽林木种养专业合作社','衡南县茶源生态农业种养专业合作社',
+            '衡东县美景生态农业综合开发有限公司','祁东县乡情力凡养殖专业合作社','耒阳市万程农业科技有限公司','衡山勾头峰生态农业开发有限公司',
+            '常宁市嘉林油茶专业合作联社','衡东金色田园水稻种植专业合作社','衡东县高塘洲先油茶种植专业合作社','衡东县麦香果木种植专业合作社',
+            '耒阳市浩森油茶种养殖专业合作社','耒阳市泉塘种养专业合作社','祁东县龙泉广生种植合作社','耒阳市朝晖农业科技开发有限公司'];
+        const districts = ['耒阳市','常宁市','衡南县','衡东县','耒阳市','衡东县','衡南县','衡南县',
+            '衡东县','祁东县','耒阳市','衡山县','常宁市','衡东县','衡东县','衡东县','耒阳市','耒阳市','祁东县','耒阳市'];
+        const codes = ['914304816755853260','91430482344796436T','93430422689545077E','91430424MA4P9TMK9P',
+            '93430481MA4L1JLM4G','93430424MA4PP3TT3Q','93430422680340286N','934304223206034761',
+            '91430424MA4PRPFB8G','93430426325671814U','9143048132932350XT','91430423MA4L44XB6P',
+            '93430482MA4L56TG2X','93430424MA4L2NDE4L','93430424064240521W','93430424553003826F',
+            '93430481567651103G','93430481MA4L2Y0T4J','93430426MA4L36X49M','91430481MA4PL1P70W'];
+        const data=[];
+        for(let i=0;i<n;i++){
+            const ent={}; ALL_FIELDS.forEach(f=>{ent[f]='';});
+            ent['企业名称']=names[i%names.length] + (i>=names.length?'_'+i:'');
+            ent['所属区县']=districts[i%districts.length];
+            ent['统一社会信用代码']=codes[i%codes.length] + (i>=codes.length?'_'+i:'');
+            ent['法定代表人']='张'+['伟','强','丽','华','明','军','勇','杰'][i%8];
+            ent['企业规模']=['大型','中型','小型','微型'][i%4];
+            ent['注册资本（万人民币）']=String(Math.round((Math.random()*800+50)*10)/10);
+            ent['实缴资本']=String(Math.round((Math.random()*600+20)*10)/10);
+            ent['成立日期']='2018-0'+((i%9)+1)+'-'+String(Math.floor(Math.random()*28)+1).padStart(2,'0');
+            ent['登记状态']='存续';
+            ent['企业(机构)类型']='有限责任公司';
+            ent['国标行业门类']=i<4?'农、林、牧、渔业':(i<8?'制造业':(i<12?'批发和零售业':'信息传输、软件和信息技术服务业'));
+            ent['国标行业大类']='农业';
+            ent['国标行业中类']='油茶种植';
+            // 随机等级
+            let gradeIdx = i % 4;
+            let scoreBase = 0.9 - gradeIdx*0.2;
+            ent['诚实守信']=String(Math.random()*0.3 + scoreBase);
+            ent['信用承诺']=String(Math.random()*0.3 + scoreBase);
+            ent['变更记录_总数']=String(Math.floor(Math.random()*10)+ gradeIdx*5);
+            ent['法定代表人变更_次数']=String(Math.floor(Math.random()*4)+ gradeIdx*2);
+            ent['注册资本变更_次数']=String(Math.floor(Math.random()*4)+ gradeIdx*2);
+            ent['商标_数量']=String(Math.floor(Math.random()*8)+ 5 - gradeIdx*2);
+            ent['专利_数量']=String(Math.floor(Math.random()*8)+ 5 - gradeIdx*2);
+            ent['资质证书_数量']=String(Math.floor(Math.random()*4)+ 3 - gradeIdx);
+            ent['资质证书_有效数量']=String(Math.floor(Math.random()*4)+ 2 - gradeIdx);
+            ent['是否有食品生产许可证_数量']=gradeIdx<2?'1':'0';
+            ent['高新技术企业认定_数量']=gradeIdx<2?'1':'0';
+            // 违规记录
+            if(gradeIdx>=2){
+                ent['被执行人_数量']=String(Math.floor(Math.random()*3)+1);
+                ent['被执行人_最近日期']='2025-0'+(Math.floor(Math.random()*6)+1)+'-'+String(Math.floor(Math.random()*28)+1).padStart(2,'0');
+                ent['司法案件_数量']=String(Math.floor(Math.random()*3)+1);
+                ent['司法案件_最近日期']='2025-0'+(Math.floor(Math.random()*6)+1)+'-'+String(Math.floor(Math.random()*28)+1).padStart(2,'0');
+            } else {
+                ent['被执行人_数量']='0';
+                ent['司法案件_数量']='0';
+            }
+            if(gradeIdx>=3){
+                ent['行政处罚_数量']=String(Math.floor(Math.random()*2)+1);
+                ent['行政处罚_最近日期']='2025-0'+(Math.floor(Math.random()*6)+1)+'-'+String(Math.floor(Math.random()*28)+1).padStart(2,'0');
+            } else {
+                ent['行政处罚_数量']='0';
+            }
+            ent['是否历史风险企业']=gradeIdx>=2?'1':'0';
+            data.push(ent);
+        }
+        return data;
+    }
+
+    let isPresetLoaded = false;
+
+    function loadData(enterprises, updateTime) {
+        if (!enterprises || enterprises.length===0) return;
+        loadingOverlay.classList.add('active');
+        setTimeout(() => {
+            allEnterprises = enterprises;
+            if (updateTime) { dataUpdateTime=updateTime; document.getElementById('dataUpdateDisplay').textContent='数据更新时间: '+updateTime; }
+
+            // 趋势图数据
+            trendDataMap = {};
+            const now = new Date();
+            const threeYearsAgo = new Date(now.getFullYear()-3, now.getMonth(), now.getDate());
+            const dateFields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                '行政处罚_最近日期','终本案件_最近日期','司法案件_最近日期'];
+            const eventTypeMap = {
+                '被执行人_最近日期':'被执行人记录',
+                '失信被执行人_最近日期':'失信被执行人记录',
+                '限制消费令_最近日期':'限制消费令记录',
+                '行政处罚_最近日期':'行政处罚记录',
+                '终本案件_最近日期':'终本案件记录',
+                '司法案件_最近日期':'司法案件记录'
+            };
+            enterprises.forEach(ent => {
+                dateFields.forEach(f => {
+                    const dateStr = ent[f];
+                    if (dateStr && dateStr.length>=7) {
+                        const dt = new Date(dateStr);
+                        if (!isNaN(dt) && dt >= threeYearsAgo) {
+                            const month = dateStr.substring(0,7);
+                            if (!trendDataMap[month]) trendDataMap[month] = [];
+                            trendDataMap[month].push({
+                                name: ent['企业名称'] || '未知',
+                                type: eventTypeMap[f] || f,
+                                date: dateStr,
+                                code: ent['统一社会信用代码'] || ''
+                            });
+                        }
+                    }
+                });
+            });
+            const sortedMonths = Object.keys(trendDataMap).sort();
+            const newMap = {};
+            sortedMonths.forEach(m => { newMap[m] = trendDataMap[m]; });
+            trendDataMap = newMap;
+
+            // 计算得分和等级
+            const hasGrade = enterprises.some(e=>e['信用等级']&&e['信用等级'].trim());
+            const hasScore = enterprises.some(e=>e['参考_综合信用分']!==undefined&&e['参考_综合信用分']!=='');
+            if (hasGrade && hasScore) {
+                scoredResults = enterprises.map(ent => {
+                    const grade = String(ent['信用等级']||'信用一般').trim();
+                    const score = parseFloat(ent['参考_综合信用分']) || 50;
+                    const lrVars = ['诚实守信','信用承诺','变更记录_总数','法定代表人变更_次数','注册资本变更_次数',
+                                    '商标_数量','专利_数量','资质证书_数量','资质证书_有效数量',
+                                    '是否有食品生产许可证_数量','高新技术企业认定_数量'];
+                    const allFeatureValues = enterprises.map(e => lrVars.map(f => getVal(e, f, 0)));
+                    const featureScaled = [];
+                    for (let j=0; j<lrVars.length; j++) {
+                        const vals = allFeatureValues.map(arr => arr[j]);
+                        const min = Math.min(...vals);
+                        const max = Math.max(...vals);
+                        const range = max - min;
+                        if (range === 0) featureScaled.push(vals.map(()=>0.5));
+                        else featureScaled.push(vals.map(v => (v - min) / range));
+                    }
+                    const idx = enterprises.indexOf(ent);
+                    const features = featureScaled.map(arr => arr[idx]);
+                    const prob = logisticPredict(features);
+                    return {
+                        ent: ent,
+                        totalScore: score/100,
+                        grade: grade,
+                        riskProb: prob,
+                        riskPredicted: prob >= riskThreshold ? 1 : 0,
+                        actualRisk: parseInt(ent['是否历史风险企业'])||0,
+                        judicial:0, admin:0, official:0, qualification:0, innovation:0, stability:0
+                    };
+                });
+            } else {
+                scoredResults = computeScoresAndGrades(enterprises);
+            }
+
+            // 补充整改状态、奖惩措施等
+            const nowDate = new Date();
+            const oneYearAgo = new Date(nowDate.getFullYear()-1, nowDate.getMonth(), nowDate.getDate());
+            scoredResults.forEach(r => {
+                const ent = r.ent;
+                const hasJudicial = getVal(ent,'被执行人_数量',0)>0 || getVal(ent,'失信被执行人_数量',0)>0 ||
+                    getVal(ent,'限制消费令_数量',0)>0 || getVal(ent,'终本案件_数量',0)>0 ||
+                    getVal(ent,'司法案件_数量',0)>0;
+                const hasAdmin = getVal(ent,'行政处罚_数量',0)>0;
+                const dateFields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                    '终本案件_最近日期','司法案件_最近日期','行政处罚_最近日期'];
+                let hasRecent = false;
+                for (const f of dateFields) {
+                    const dateStr = ent[f];
+                    if (dateStr && dateStr.length>=10) {
+                        const dt = new Date(dateStr);
+                        if (!isNaN(dt) && dt >= oneYearAgo) { hasRecent = true; break; }
+                    }
+                }
+                const hasRecords = (hasJudicial || hasAdmin) && hasRecent;
+                if (hasRecords && ent['整改状态'] !== '已整改') {
+                    ent['整改状态'] = '待整改';
+                    const deadline = new Date(nowDate);
+                    deadline.setDate(deadline.getDate() + 30);
+                    ent['整改期限'] = deadline.toISOString().slice(0,10);
+                } else if (!hasRecords || ent['整改状态'] === '已整改') {
+                    ent['整改状态'] = '无';
+                    ent['整改期限'] = '-';
+                }
+                if (ent['整改状态'] === '待整改' && !hasRecords) {
+                    ent['整改状态'] = '无';
+                    ent['整改期限'] = '-';
+                }
+                // 默认奖惩措施（详情页会重新生成）
+                if (!ent['奖惩措施']) {
+                    if (r.grade==='信用优良') ent['奖惩措施']='绿色通道、财政补贴、优先推荐';
+                    else if (r.grade==='信用一般') ent['奖惩措施']='常规监管';
+                    else if (r.grade==='信用关注') ent['奖惩措施']='加强监管、限制享受优惠政策';
+                    else ent['奖惩措施']='重点监管、限制经营、列入黑名单';
+                }
+                if (hasRecords) {
+                    let reasons = [];
+                    if (getVal(ent,'被执行人_数量',0)>0) reasons.push('存在被执行人记录');
+                    if (getVal(ent,'失信被执行人_数量',0)>0) reasons.push('存在失信被执行人记录');
+                    if (getVal(ent,'限制消费令_数量',0)>0) reasons.push('存在限制消费令');
+                    if (getVal(ent,'终本案件_数量',0)>0) reasons.push('存在终本案件');
+                    if (getVal(ent,'司法案件_数量',0)>0) reasons.push('涉及司法案件');
+                    if (getVal(ent,'行政处罚_数量',0)>0) reasons.push('存在行政处罚');
+                    if (reasons.length===0) reasons.push('综合信用评分偏低，需重点关注');
+                    ent['整改原因'] = reasons.join('；');
+                } else {
+                    ent['整改原因'] = '企业信用良好，暂无整改项';
+                }
+                r.abnormals = [];
+            });
+
+            // 更新UI
+            updateUI();
+            renderCharts();
+            renderRankList();
+            updateQAContext();
+            updateAlertsAndRectify();
+            updateRectifyAndExcellent();
+            updateHighRiskList();
+            document.getElementById('totalCount').textContent = enterprises.length;
+            const riskCount = scoredResults.filter(r=>r.grade==='信用风险').length;
+            document.getElementById('riskCount').textContent = riskCount;
+            // 阈值卡片数据由 updateAlertsAndRectify 同步
+            document.getElementById('uploadError').className='error-msg';
+            document.getElementById('uploadError').textContent='';
+            if (!isPresetLoaded && enterprises.length > 0) {
+                document.getElementById('loadSampleBtn').classList.add('hidden-btn');
+                isPresetLoaded = true;
+            }
+            loadingOverlay.classList.remove('active');
+        }, 50);
+    }
+
+    // ================================================================
+    // 模块5：UI更新
+    // ================================================================
+    function updateUI(){ applyFilters(); updateClock(); }
+    function updateClock(){
+        const now=new Date();
+        document.getElementById('currentTimeDisplay').textContent='🕐 '+now.toLocaleString('zh-CN',{hour12:false});
+        setTimeout(updateClock,1000);
+    }
+    function getCurrentDistrict(){ return document.getElementById('filterDistrict').value; }
+
+    function applyFilters(){
+        const keyword=document.getElementById('searchInput').value.trim().toLowerCase();
+        const district=document.getElementById('filterDistrict').value;
+        const risk=document.getElementById('filterRisk').value;
+        let filtered=scoredResults.filter(r=>{
+            const name=String(r.ent['企业名称']||'').toLowerCase();
+            const code=String(r.ent['统一社会信用代码']||'').toLowerCase();
+            const matchKeyword=!keyword||name.includes(keyword)||code.includes(keyword);
+            const entDistrict=r.ent['所属区县']||'其他/未知';
+            const matchDistrict=!district||entDistrict===district;
+            const matchRisk=!risk||r.grade===risk;
+            return matchKeyword&&matchDistrict&&matchRisk;
+        });
+        filteredEnterprises=filtered;
+        renderRankList(filtered);
+        renderCharts(filtered);
+        updateAlertsAndRectify();
+        updateHighRiskList();
+    }
+    function resetFilters(){
+        document.getElementById('searchInput').value='';
+        document.getElementById('filterDistrict').value='';
+        document.getElementById('filterRisk').value='';
+        applyFilters();
+        document.getElementById('searchSuggest').style.display='none';
+    }
+
+    // 搜索建议与查找
+    function onSearchInput(){
+        const input=document.getElementById('searchInput');
+        const val=input.value.trim().toLowerCase();
+        const suggestBox=document.getElementById('searchSuggest');
+        if(!val){ suggestBox.style.display='none'; return; }
+        const matches=scoredResults.filter(r=>{
+            const name=String(r.ent['企业名称']||'').toLowerCase();
+            const code=String(r.ent['统一社会信用代码']||'').toLowerCase();
+            return name.includes(val)||code.includes(val);
+        }).slice(0,10);
+        if(matches.length===0){ suggestBox.style.display='none'; return; }
+        let html='';
+        matches.forEach(r=>{
+            const name=String(r.ent['企业名称']||'');
+            const code=String(r.ent['统一社会信用代码']||'');
+            html+=`<div class="suggest-item" onclick="selectSuggestion('${code}')">${name} <span class="code">${code}</span></div>`;
+        });
+        suggestBox.innerHTML=html;
+        suggestBox.style.display='block';
+    }
+    function selectSuggestion(code){
+        document.getElementById('searchSuggest').style.display='none';
+        document.getElementById('searchInput').value='';
+        const ent=allEnterprises.find(e=>e['统一社会信用代码']===code);
+        if(ent) openDetailPage(ent);
+    }
+    function doSearch(){
+        const val=document.getElementById('searchInput').value.trim().toLowerCase();
+        if(!val){ alert('请输入搜索关键词'); return; }
+        const matches=scoredResults.filter(r=>{
+            const name=String(r.ent['企业名称']||'').toLowerCase();
+            const code=String(r.ent['统一社会信用代码']||'').toLowerCase();
+            return name.includes(val)||code.includes(val);
+        });
+        const modal=document.getElementById('searchResultModal');
+        const container=document.getElementById('searchResultContainer');
+        const sub=document.getElementById('searchResultSub');
+        sub.textContent = `找到 ${matches.length} 家企业`;
+        if(matches.length===0){
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8;">未找到匹配企业</div>';
+        } else {
+            let html='';
+            matches.forEach(r=>{
+                const name=String(r.ent['企业名称']||'未知');
+                const code=String(r.ent['统一社会信用代码']||'');
+                const score=(r.totalScore*100).toFixed(1);
+                html+=`<div class="search-result-item" onclick="openDetailPageByCode('${code}'); closeSearchResult();">
+                            <span class="sr-name">${name}</span>
+                            <span class="sr-code">${code}</span>
+                            <span style="float:right;font-weight:500;">得分 ${score}</span>
+                        </div>`;
+            });
+            container.innerHTML=html;
+        }
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+        document.getElementById('searchSuggest').style.display='none';
+    }
+    function closeSearchResult(){
+        document.getElementById('searchResultModal').classList.remove('active');
+        document.body.style.overflow='';
+    }
+    document.getElementById('searchResultModal').addEventListener('click', function(e){
+        if(e.target===this) closeSearchResult();
+    });
+
+    // ================================================================
+    // 模块6：排行榜
+    // ================================================================
+    function renderRankList(data){
+        const list=data||filteredEnterprises||scoredResults;
+        const topContainer=document.getElementById('rankTop');
+        const bottomContainer=document.getElementById('rankBottom');
+        if(!list||list.length===0){
+            topContainer.innerHTML='<div class="col-title">🏆 信用得分最高</div><div style="padding:10px 0;color:#94a3b8;">暂无数据</div>';
+            bottomContainer.innerHTML='<div class="col-title">⚠️ 信用得分待提升</div><div style="padding:10px 0;color:#94a3b8;">暂无数据</div>';
+            return;
+        }
+        const sorted=[...list].sort((a,b)=>b.totalScore-a.totalScore);
+        const top=sorted.slice(0,50);
+        const bottom=sorted.slice(-50).reverse();
+        const renderItems=(items,isTop)=>{
+            let html=`<div class="col-title">${isTop?'🏆 信用得分最高':'⚠️ 信用得分待提升'}</div>`;
+            items.forEach((r,idx)=>{
+                const pos=isTop?idx+1:sorted.length-idx;
+                const gradeClass='badge-'+r.grade.replace('信用','');
+                const name=String(r.ent['企业名称']||'未知').slice(0,16);
+                let borderClass='';
+                if(isTop&&idx===0) borderClass='top1';
+                else if(isTop&&idx===1) borderClass='top2';
+                else if(isTop&&idx===2) borderClass='top3';
+                html+=`<div class="rank-item ${borderClass}" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <span class="rank-pos">${pos}</span>
+                            <span class="rank-name">${name}</span>
+                            <span class="rank-score">${(r.totalScore*100).toFixed(1)}</span>
+                            <span class="rank-badge ${gradeClass}">${r.grade}</span>
+                        </div>`;
+            });
+            return html;
+        };
+        topContainer.innerHTML=renderItems(top,true);
+        bottomContainer.innerHTML=renderItems(bottom,false);
+    }
+    function openDetailPageByCode(code){ 
+        const ent=allEnterprises.find(e=>e['统一社会信用代码']===code); 
+        if(ent) openDetailPage(ent); 
+    }
+
+    // ================================================================
+    // 模块7：图表渲染（热力图、趋势图、雷达图）
+    // ================================================================
+    let heatmapChart, trendChart, radarChart;
+
+    function renderCharts(data){
+        const list=data||filteredEnterprises||scoredResults;
+        if(!list||list.length===0){
+            ['heatmapChart','trendChart','radarChart'].forEach(id=>{
+                const el=document.getElementById(id);
+                if(el){ const inst=echarts.getInstanceByDom(el); if(inst) inst.dispose(); el.innerHTML='<div class="text-muted" style="display:flex;align-items:center;justify-content:center;height:100%;">暂无数据</div>'; }
+            });
+            return;
+        }
+        renderHeatmap(list);
+        renderTrend(list);
+        renderRadar(list);
+    }
+
+    function renderHeatmap(data){
+        const el=document.getElementById('heatmapChart');
+        if(!el) return;
+        if(heatmapChart) heatmapChart.dispose();
+        heatmapChart=echarts.init(el);
+        const grades=['信用优良','信用一般','信用关注','信用风险'];
+        const districtMap={};
+        data.forEach(r=>{
+            let d=r.ent['所属区县']||'其他/未知';
+            if(!districtMap[d]) districtMap[d]={'信用优良':0,'信用一般':0,'信用关注':0,'信用风险':0};
+            districtMap[d][r.grade]=(districtMap[d][r.grade]||0)+1;
+        });
+        const districts=Object.keys(districtMap).sort();
+        const matrixData=[];
+        const maxVal=Math.max(...districts.map(d=>Math.max(...grades.map(g=>districtMap[d][g]||0))),1);
+        districts.forEach((d,y)=>{
+            grades.forEach((g,x)=>{
+                const count=districtMap[d][g]||0;
+                matrixData.push({value:[x,y,count], district:d, grade:g, count:count});
+            });
+        });
+        const clickHandler = function(params){
+            const data = params.data;
+            if(!data || !data.district || !data.grade) return;
+            const district = data.district;
+            const grade = data.grade;
+            const list = scoredResults.filter(r=> (r.ent['所属区县']||'其他/未知')===district && r.grade===grade);
+            list.sort((a,b) => b.totalScore - a.totalScore);
+            if(list.length===0) return;
+            const modal=document.getElementById('heatmapModal');
+            document.getElementById('heatmapModalTitle').textContent = `${district} - ${grade} (${list.length}家)`;
+            const container=document.getElementById('heatmapModalContent');
+            let html='';
+            list.forEach(r=>{
+                const name=String(r.ent['企业名称']||'未知');
+                const score=(r.totalScore*100).toFixed(1);
+                html+=`<div class="heatmap-popup-item" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">${name} (得分 ${score})</div>`;
+            });
+            container.innerHTML=html;
+            modal.classList.add('active');
+            document.body.style.overflow='hidden';
+        };
+        heatmapChart.off('click');
+        heatmapChart.on('click', clickHandler);
+        const option={
+            tooltip:{ formatter:function(params){ const d=params.data; if(!d||!d.district) return ''; return `<strong>${d.district}</strong><br/>等级: ${d.grade}<br/>企业数: ${d.count}<br/>点击查看企业列表`; } },
+            grid:{ left:120, right:20, top:20, bottom:80 },
+            xAxis:{ type:'category', data:grades, splitArea:{show:true}, axisLabel:{fontSize:11} },
+            yAxis:{ type:'category', data:districts, splitArea:{show:true}, axisLabel:{fontSize:10, width:80, overflow:'truncate'} },
+            visualMap:{ min:0, max:maxVal, calculable:true, orient:'horizontal', left:'center', bottom:10, inRange:{color:['#e5f5e0','#a1d99b','#31a354','#006d2c']}, text:['高','低'], textStyle:{fontSize:11} },
+            series:[{ type:'heatmap', data:matrixData.map(item=>({value:[item.value[0],item.value[1],item.value[2]], district:item.district, grade:item.grade, count:item.count})),
+                label:{ show:true, formatter:(p)=>p.data.count>0?p.data.count:'', fontSize:10, color:'#1e293b' },
+                emphasis:{ itemStyle:{shadowBlur:10, shadowColor:'rgba(0,0,0,0.3)'}, label:{fontSize:12, fontWeight:'bold'} }
+            }]
+        };
+        heatmapChart.setOption(option);
+        window.addEventListener('resize',()=>heatmapChart.resize());
+    }
+    function closeHeatmapModal(){ document.getElementById('heatmapModal').classList.remove('active'); document.body.style.overflow=''; }
+
+    function renderTrend(data){
+        const el=document.getElementById('trendChart');
+        if(!el) return;
+        if(trendChart) trendChart.dispose();
+        trendChart=echarts.init(el);
+        const months = Object.keys(trendDataMap).sort();
+        if(months.length===0){
+            trendChart.setOption({ title:{ text:'近三年无日期事件数据', left:'center', top:'center', textStyle:{color:'#94a3b8', fontSize:16} } });
+            return;
+        }
+        const values = months.map(m => trendDataMap[m].length);
+        const alpha=0.3;
+        const smoothed=[values[0]];
+        for(let i=1;i<values.length;i++) smoothed.push(alpha*values[i]+(1-alpha)*smoothed[i-1]);
+        const clickHandler = function(params){
+            if(params.componentType === 'series'){
+                const month = months[params.dataIndex];
+                const events = trendDataMap[month] || [];
+                if(events.length===0) return;
+                events.sort((a,b) => a.date.localeCompare(b.date));
+                const modal=document.getElementById('trendModal');
+                document.getElementById('trendModalTitle').textContent = `${month} 风险事件详情 (${events.length}件)`;
+                const container=document.getElementById('trendModalContent');
+                let html='';
+                events.forEach(ev=>{
+                    html+=`<div class="trend-event-item" onclick="openDetailPageByCode('${ev.code||''}')">${ev.name} - ${ev.type} (${ev.date})</div>`;
+                });
+                container.innerHTML=html;
+                modal.classList.add('active');
+                document.body.style.overflow='hidden';
+            }
+        };
+        trendChart.off('click');
+        trendChart.on('click', clickHandler);
+        const option={
+            tooltip:{ trigger:'axis' },
+            legend:{ data:['原始事件数','平滑趋势'], bottom:10, icon:'circle', itemWidth:8 },
+            grid:{ left:40, right:16, top:16, bottom:60 },
+            xAxis:{ type:'category', data:months, axisLabel:{ fontSize:10, rotate:30 } },
+            yAxis:{ type:'value', name:'事件数', min:0 },
+            series:[
+                { name:'原始事件数', type:'bar', data:values, barWidth:'30%', itemStyle:{ color:'#94a3b8', borderRadius:[3,3,0,0] }, z:1 },
+                { name:'平滑趋势', type:'line', data:smoothed.map(v=>round2(v)), smooth:true, lineStyle:{ color:'#38bdf8', width:3 }, areaStyle:{ color:'rgba(56,189,248,0.15)' }, symbol:'circle', symbolSize:6, z:2 }
+            ]
+        };
+        trendChart.setOption(option);
+        window.addEventListener('resize',()=>trendChart.resize());
+    }
+    function closeTrendModal(){ document.getElementById('trendModal').classList.remove('active'); document.body.style.overflow=''; }
+
+    function renderRadar(data){
+        const el=document.getElementById('radarChart');
+        if(!el) return;
+        if(radarChart) radarChart.dispose();
+        radarChart=echarts.init(el);
+        const grades=['信用优良','信用一般','信用关注','信用风险'];
+        const dims=['司法风险','行政合规','官方评价','资质合规','创新能力','经营稳定性'];
+        const colorMap={'信用优良':'#22c55e','信用一般':'#3b82f6','信用关注':'#f59e0b','信用风险':'#ef4444'};
+        const gradeMap={};
+        grades.forEach(g=>{ gradeMap[g]=[]; });
+        data.forEach(r=>{ if(gradeMap[r.grade]) gradeMap[r.grade].push(r); });
+        const radarData = grades.map(grade=>{
+            const items=gradeMap[grade]||[];
+            if(items.length===0) return {name:grade, value:[0,0,0,0,0,0]};
+            const avg = [
+                items.reduce((s,r)=>s+r.judicial,0)/items.length,
+                items.reduce((s,r)=>s+r.admin,0)/items.length,
+                items.reduce((s,r)=>s+r.official,0)/items.length,
+                items.reduce((s,r)=>s+r.qualification,0)/items.length,
+                items.reduce((s,r)=>s+r.innovation,0)/items.length,
+                items.reduce((s,r)=>s+r.stability,0)/items.length
+            ].map(v=>round2(v*100));
+            return {name:grade, value:avg};
+        }).filter(d=>d.value.some(v=>v>0));
+        const option={
+            tooltip:{ trigger:'item' },
+            legend:{ data:radarData.map(d=>d.name), bottom:0, icon:'circle', itemWidth:8 },
+            radar:{
+                indicator: dims.map(name=>({name:name, max:100})),
+                shape:'polygon',
+                splitArea:{ areaStyle:{ color:['rgba(56,189,248,0.02)','rgba(56,189,248,0.06)'] } },
+                axisLine:{ lineStyle:{ color:'#e2e8f0' } },
+                center:['50%','50%'],
+                radius:'70%'
+            },
+            series:[{
+                type:'radar',
+                data: radarData.map(d=>({
+                    value:d.value,
+                    name:d.name,
+                    areaStyle:{ color:colorMap[d.name]+'40' },
+                    lineStyle:{ color:colorMap[d.name], width:2 },
+                    itemStyle:{ color:colorMap[d.name] }
+                })),
+                symbol:'none',
+                label:{ show:true, formatter:(p)=>p.value, fontSize:10, color:'#475569' }
+            }]
+        };
+        radarChart.setOption(option);
+        window.addEventListener('resize',()=>radarChart.resize());
+    }
+
+    // ================================================================
+    // 模块8：预警、待整改、高风险企业（同时更新阈值卡片）
+    // ================================================================
+    function updateAlertsAndRectify(){
+        const district = getCurrentDistrict();
+        let filtered = scoredResults;
+        if(district) filtered = filtered.filter(r=> (r.ent['所属区县']||'') === district);
+
+        // --- 预警（负向异常且概率≥0.6） ---
+        const alertItems = [];
+        filtered.forEach(r => {
+            const abnormal = getNegativeAbnormal(r.ent, scoredResults);
+            if (abnormal.length > 0 && r.riskProb >= 0.6) {
+                r.abnormals = abnormal;
+                alertItems.push(r);
+            } else {
+                r.abnormals = [];
+            }
+        });
+        alertItems.sort((a,b) => b.riskProb - a.riskProb);
+        document.getElementById('alertCount').textContent = alertItems.length;
+        document.getElementById('thresholdRiskCount').textContent = alertItems.length;
+        if (alertItems.length > 0) {
+            const avgProb = alertItems.reduce((s,r) => s + r.riskProb, 0) / alertItems.length;
+            document.getElementById('avgRiskProb').textContent = (avgProb * 100).toFixed(1) + '%';
+        } else {
+            document.getElementById('avgRiskProb').textContent = '--';
+        }
+
+        const alertContainer = document.getElementById('alertListContainer');
+        if(alertItems.length === 0){
+            alertContainer.innerHTML = '<div class="empty-msg">暂无预警信息</div>';
+        } else {
+            let html = '';
+            alertItems.slice(0,15).forEach(r => {
+                const name = String(r.ent['企业名称']||'未知');
+                const prob = (r.riskProb*100).toFixed(1);
+                let level = '较低';
+                if (r.riskProb >= 0.8) level = '紧急';
+                else if (r.riskProb >= 0.7) level = '高';
+                else if (r.riskProb >= 0.6) level = '中';
+                else level = '较低';
+                const levelClass = 'level-'+level;
+                html += `<div class="alert-item ${levelClass}" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <span class="alert-name">${name}</span>
+                            <span class="alert-detail">风险概率 ${prob}%</span>
+                            <span class="alert-level">${level}</span>
+                        </div>`;
+            });
+            alertContainer.innerHTML = html;
+        }
+
+        // --- 待整改 ---
+        const nowDate = new Date();
+        const oneYearAgo = new Date(nowDate.getFullYear()-1, nowDate.getMonth(), nowDate.getDate());
+        const rectifyList = filtered.filter(r => {
+            const ent = r.ent;
+            if (ent['整改状态'] !== '待整改') return false;
+            const dateFields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                '终本案件_最近日期','司法案件_最近日期','行政处罚_最近日期'];
+            let hasRecent = false;
+            for (const f of dateFields) {
+                const dateStr = ent[f];
+                if (dateStr && dateStr.length>=10) {
+                    const dt = new Date(dateStr);
+                    if (!isNaN(dt) && dt >= oneYearAgo) { hasRecent = true; break; }
+                }
+            }
+            return hasRecent;
+        });
+        rectifyList.sort((a,b)=>{
+            const getLatest = (ent)=>{
+                const fields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                    '终本案件_最近日期','司法案件_最近日期','行政处罚_最近日期'];
+                let latest=null;
+                for(const f of fields){
+                    const d=ent[f];
+                    if(d && d.length>=10){ const dt=new Date(d); if(!isNaN(dt) && (!latest||dt>latest)) latest=dt; }
+                }
+                return latest;
+            };
+            const da=getLatest(a.ent), db=getLatest(b.ent);
+            if(!da && !db) return 0;
+            if(!da) return 1;
+            if(!db) return -1;
+            return db - da;
+        });
+        document.getElementById('rectifyCount').textContent = rectifyList.length;
+        const rectifyContainer = document.getElementById('rectifyListContainer');
+        if(rectifyList.length === 0){
+            rectifyContainer.innerHTML = '<div class="empty-msg">暂无待整改企业</div>';
+        } else {
+            let html = '';
+            rectifyList.slice(0,15).forEach(r => {
+                const name = String(r.ent['企业名称']||'未知');
+                let typeParts = [];
+                const typeMap = {
+                    '被执行人_数量':'被执行人',
+                    '失信被执行人_数量':'失信被执行人',
+                    '限制消费令_数量':'限制消费令',
+                    '终本案件_数量':'终本案件',
+                    '司法案件_数量':'司法案件',
+                    '行政处罚_数量':'行政处罚'
+                };
+                for(const [key,label] of Object.entries(typeMap)){
+                    const val = getVal(r.ent,key,0);
+                    if(val>0) typeParts.push(`${label}(${val}件)`);
+                }
+                const typeStr = typeParts.join('、');
+                const fields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                    '终本案件_最近日期','司法案件_最近日期','行政处罚_最近日期'];
+                let latestDate=null;
+                for(const f of fields){
+                    const d=r.ent[f];
+                    if(d && d.length>=10){ const dt=new Date(d); if(!isNaN(dt) && (!latestDate||dt>latestDate)) latestDate=dt; }
+                }
+                const dayDiff = latestDate ? Math.floor((new Date()-latestDate)/(1000*60*60*24)) : '?';
+                const reason = generateRectifyReason(r.ent);
+                html += `<div class="rectify-item" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <span class="rectify-name">${name}</span>
+                            <span class="rectify-detail">${typeStr} · ${dayDiff}天前</span>
+                            <span class="rectify-level">待整改</span>
+                        </div>`;
+            });
+            rectifyContainer.innerHTML = html;
+        }
+    }
+
+    function markRectified(code){
+        const ent = allEnterprises.find(e=>e['统一社会信用代码']===code);
+        if(!ent) return;
+        ent['整改状态']='已整改';
+        ent['整改期限']='-';
+        loadData(allEnterprises, dataUpdateTime);
+        addQAMessage(`✅ 企业 ${ent['企业名称']} 已标记为已整改。`,'bot');
+    }
+    function refreshAlerts(){ updateAlertsAndRectify(); addQAMessage('🔄 预警和待整改已刷新。','bot'); }
+    function refreshRectify(){ updateAlertsAndRectify(); addQAMessage('🔄 待整改列表已刷新。','bot'); }
+
+    function generateRectifyReason(ent) {
+        const now = new Date();
+        const oneYearAgo = new Date(now.getFullYear()-1, now.getMonth(), now.getDate());
+        const typeFields = [
+            { key: '被执行人_数量', dateKey: '被执行人_最近日期', name: '被执行人' },
+            { key: '失信被执行人_数量', dateKey: '失信被执行人_最近日期', name: '失信被执行人' },
+            { key: '限制消费令_数量', dateKey: '限制消费令_最近日期', name: '限制消费令' },
+            { key: '终本案件_数量', dateKey: '终本案件_最近日期', name: '终本案件' },
+            { key: '司法案件_数量', dateKey: '司法案件_最近日期', name: '司法案件' },
+            { key: '行政处罚_数量', dateKey: '行政处罚_最近日期', name: '行政处罚' }
+        ];
+        let recentEvents = [];
+        typeFields.forEach(tf => {
+            const count = getVal(ent, tf.key, 0);
+            const dateStr = ent[tf.dateKey] || '';
+            if (count > 0 && dateStr && dateStr.length >= 10) {
+                const dt = new Date(dateStr);
+                if (!isNaN(dt) && dt >= oneYearAgo) {
+                    recentEvents.push({
+                        date: dt,
+                        dateStr: dateStr,
+                        name: tf.name,
+                        count: count
+                    });
+                }
+            }
+        });
+        if (recentEvents.length === 0) return '近一年无新增违规记录';
+        recentEvents.sort((a, b) => b.date - a.date);
+        return recentEvents.map(ev => `${ev.dateStr} 新增 ${ev.count} 起${ev.name}案件`).join('；');
+    }
+
+    function updateRectifyAndExcellent(){
+        const excellentList = scoredResults.filter(r => r.grade === '信用优良' && r.ent['整改状态'] !== '待整改');
+        document.getElementById('excellentCount').textContent = excellentList.length;
+    }
+
+    function updateHighRiskList(){
+        const container = document.getElementById('highRiskList');
+        const highRisk = scoredResults.filter(r =>
+            r.grade === '信用风险' &&
+            r.abnormals && r.abnormals.length > 0 &&
+            r.ent['整改状态'] === '待整改'
+        );
+        if(highRisk.length === 0){
+            container.innerHTML = '<div class="empty-msg">暂无高风险企业</div>';
+            return;
+        }
+        let html = '';
+        highRisk.slice(0,15).forEach(r => {
+            const name = String(r.ent['企业名称']||'未知');
+            html += `<div class="high-risk-item" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                        <span class="hr-name">${name}</span>
+                        <span class="hr-badge">高风险</span>
+                    </div>`;
+        });
+        if(highRisk.length > 15) html += `<div style="padding:6px 0;color:#94a3b8;font-size:13px;">...还有${highRisk.length-15}家</div>`;
+        container.innerHTML = html;
+    }
+
+    // ================================================================
+    // 模块9：个性化奖励与建议（结合行业、规模等）
+    // ================================================================
+    function generateReward(ent, scored) {
+        const hasAbnormal = scored.abnormals && scored.abnormals.length > 0;
+        const isRectify = ent['整改状态'] === '待整改';
+        if (hasAbnormal || isRectify) {
+            return '无特殊激励';
+        }
+        const grade = scored.grade;
+        const scale = ent['企业规模'] || '小型';
+        const industry = ent['国标行业门类'] || '农、林、牧、渔业';
+        const capital = parseFloat(ent['注册资本（万人民币）']) || 0;
+        const employees = parseInt(ent['参保人数']) || 0;
+        const industryDetail = ent['国标行业中类'] || '';
+
+        if (grade === '信用优良') {
+            let base = '享受行政审批绿色通道、财政补贴优先、政府采购优先推荐、银行信贷优惠利率';
+            let extra = '';
+            if (industry.includes('农、林') || industry.includes('农业')) {
+                extra = '，优先推荐参与高标准农田建设、农业产业化项目，享受农机购置补贴、种粮补贴';
+            } else if (industry.includes('制造')) {
+                extra = '，优先推荐智能制造试点、技改项目，享受研发费用加计扣除、设备更新补贴';
+            } else if (industry.includes('批发') || industry.includes('零售')) {
+                extra = '，优先推荐诚信示范企业、放心消费示范单位，享受降低监管频次';
+            } else if (industry.includes('信息传输') || industry.includes('软件')) {
+                extra = '，优先推荐数字经济示范项目，享受软件企业税收优惠、研发补助';
+            } else {
+                extra = '，享受招商引资优惠、信用贷款支持';
+            }
+            if (scale === '大型') {
+                extra += '，可参与政府重大项目合作，享受大企业直通车服务';
+            } else if (scale === '中型') {
+                extra += '，可申请创新券、研发补贴，纳入专精特新培育库';
+            } else if (scale === '小型') {
+                extra += '，可享受创业担保贷款、免费管理培训、场地租金减免';
+            }
+            if (capital > 1000) {
+                extra += '，优先对接多层次资本市场，享受上市辅导补贴';
+            } else if (capital > 500) {
+                extra += '，优先推荐“信易贷”平台，享受低息贷款';
+            }
+            if (employees > 100) {
+                extra += '，享受稳岗补贴、社保减免、培训补贴';
+            } else if (employees > 50) {
+                extra += '，享受社保缓缴、用工补贴';
+            }
+            if (industryDetail.includes('油茶') || industryDetail.includes('茶叶')) {
+                extra += '，优先推荐“湖南茶油”公共品牌，享受品牌建设支持';
+            }
+            if (industryDetail.includes('苗木') || industryDetail.includes('花卉')) {
+                extra += '，优先推荐参加园林绿化项目，享受种苗补贴';
+            }
+            return base + extra;
+        } else if (grade === '信用一般') {
+            let base = '享受政策咨询、经营指导、简化年检流程等基础服务';
+            let extra = '';
+            if (industry.includes('农、林') || industry.includes('农业')) {
+                extra = '，并可获得农业技术培训、品牌建设辅导';
+            } else if (industry.includes('制造')) {
+                extra = '，并可参与质量管理培训、安全生产指导';
+            } else if (industry.includes('批发') || industry.includes('零售')) {
+                extra = '，并可参加诚信经营培训、消费者权益保护指导';
+            } else if (industry.includes('信息传输') || industry.includes('软件')) {
+                extra = '，并可参与数字化转型培训、网络安全指导';
+            }
+            if (scale === '大型' || scale === '中型') {
+                extra += '，可申请专项扶持基金、技术改造补助';
+            } else {
+                extra += '，可申请小额信用贷款贴息、创业补贴';
+            }
+            if (capital > 200) {
+                extra += '，有机会纳入重点企业培育库';
+            }
+            return base + extra;
+        } else {
+            return '无特殊激励';
+        }
+    }
+
+    // ================================================================
+    // 改进generateSuggestion
+    // ================================================================
+    function generateSuggestion(item) {
+        const ent = item.ent;
+        const grade = item.grade || '信用一般';
+        const scale = ent['企业规模'] || '小型';
+        const industry = ent['国标行业门类'] || '农、林、牧、渔业';
+        const capital = parseFloat(ent['注册资本（万人民币）']) || 0;
+        const employees = parseInt(ent['参保人数']) || 0;
+        const isRectify = ent['整改状态'] === '待整改';
+        const isRisk = grade === '信用风险';
+        const isAbnormal = item.abnormals && item.abnormals.length > 0;
+
+        let suggestions = [];
+
+        if (isRectify) {
+            suggestions.push('立即整改：请按照监管部门要求，限期完成整改');
+            const hasJudicial = getVal(ent,'被执行人_数量',0)>0 || getVal(ent,'失信被执行人_数量',0)>0 ||
+                getVal(ent,'限制消费令_数量',0)>0 || getVal(ent,'终本案件_数量',0)>0 ||
+                getVal(ent,'司法案件_数量',0)>0;
+            if (hasJudicial) {
+                suggestions.push('司法问题：尽快履行法院判决，消除被执行人、失信记录');
+            }
+            const hasAdmin = getVal(ent,'行政处罚_数量',0)>0;
+            if (hasAdmin) {
+                suggestions.push('行政问题：及时缴纳罚款，完成行政处罚整改');
+            }
+            if (isAbnormal) {
+                const abn = item.abnormals.join('、');
+                suggestions.push('异常指标：重点关注 ' + abn);
+            }
+            if (isRisk) {
+                suggestions.push('信用修复：制定信用修复计划，主动改善经营合规');
+            }
+            if (industry.includes('食品') || industry.includes('农、林')) {
+                suggestions.push('行业要求：严格食品安全管理，确保生产许可证有效');
+            } else if (industry.includes('制造')) {
+                suggestions.push('行业要求：强化质量控制和安全生产管理');
+            } else if (industry.includes('批发') || industry.includes('零售')) {
+                suggestions.push('行业要求：规范供应链管理，完善合同履约');
+            } else if (industry.includes('信息传输') || industry.includes('软件')) {
+                suggestions.push('行业要求：加强数据安全和知识产权保护');
+            }
+            if (scale === '大型') {
+                suggestions.push('集团管控：建立风险预警体系，加强子公司信用统管');
+            } else if (scale === '中型') {
+                suggestions.push('管理提升：完善内控制度，规范财务管理');
+            } else if (scale === '小型') {
+                suggestions.push('合规辅导：借助第三方机构完善合规制度');
+            }
+            if (capital > 500) suggestions.push('资本对接：积极对接金融机构，稳定资金链');
+            if (employees > 100) suggestions.push('用工管理：完善员工信用培训，稳定用工');
+            suggestions = [...new Set(suggestions)];
+            return suggestions.slice(0,6).join('；');
+        }
+
+        if (isRisk) {
+            suggestions.push('立即制定信用修复计划，主动履行司法判决和行政处罚');
+            suggestions.push('完善内部合规制度，设置合规专员');
+        } else if (grade === '信用关注') {
+            suggestions.push('减少频繁变更，稳定经营结构');
+            suggestions.push('加强合同管理和法律风险防范');
+        } else if (grade === '信用一般') {
+            suggestions.push('提升官方评价和创新能力，增加商标和专利储备');
+            suggestions.push('积极参与信用承诺，提高信用评分');
+        } else {
+            suggestions.push('保持合规优势，持续关注行业标准更新');
+        }
+        if (isAbnormal) {
+            suggestions.push('重点关注以下异常指标：' + item.abnormals.join('；'));
+        }
+        if (scale === '大型') {
+            suggestions.push('建立集团风险预警体系，实现子企业信用统管');
+        } else if (scale === '中型') {
+            suggestions.push('搭建信息化管理系统，提升管理效率');
+        } else if (scale === '小型') {
+            suggestions.push('借助第三方服务机构，弥补合规短板');
+        }
+        if (industry.includes('食品') || industry.includes('农、林')) {
+            suggestions.push('严格把控食品安全，定期更新生产许可证');
+        } else if (industry.includes('制造')) {
+            suggestions.push('强化质量控制和安全生产，防范生产事故');
+        } else if (industry.includes('批发') || industry.includes('零售')) {
+            suggestions.push('规范供应链管理，建立供应商信用档案');
+        } else if (industry.includes('信息传输') || industry.includes('软件')) {
+            suggestions.push('加强数据安全和知识产权保护');
+        }
+        if (capital > 500) suggestions.push('积极对接资本市场，利用信用优势融资');
+        if (employees > 100) suggestions.push('完善员工信用培训，建立内部信用文化');
+        suggestions = [...new Set(suggestions)];
+        return suggestions.slice(0,5).join('；');
+    }
+
+    // ================================================================
+    // 监管处罚措施详细内容（用于详情页的“监管处罚措施”区块）
+    // ================================================================
+    function generateRegAdviceForPunish(item) {
+        const ent = item.ent;
+        const grade = item.grade || '信用一般';
+        const hasJudicial = getVal(ent,'被执行人_数量',0)>0 || getVal(ent,'失信被执行人_数量',0)>0 ||
+            getVal(ent,'限制消费令_数量',0)>0 || getVal(ent,'终本案件_数量',0)>0 ||
+            getVal(ent,'司法案件_数量',0)>0;
+        const hasAdmin = getVal(ent,'行政处罚_数量',0)>0;
+        let advices = [];
+
+        if (grade === '信用风险') {
+            advices.push('实施重点监管，增加现场检查频次');
+            advices.push('约谈主要负责人，责令限期整改并提交报告');
+            advices.push('限制参与政府采购和财政补贴');
+        } else if (grade === '信用关注') {
+            advices.push('纳入重点监测名单，要求定期报送整改情况');
+            advices.push('加强业务合规审查，提示风险点');
+        } else if (grade === '信用一般') {
+            advices.push('常规监管，适当给予政策辅导');
+        } else {
+            advices.push('给予绿色通道，减少行政检查干扰');
+            advices.push('优先推荐评优评先和项目扶持');
+        }
+        advices.push('责令立即整改，逾期未完成将依法处罚');
+        advices.push('视情节严重程度，可暂停相关业务许可');
+        if (hasJudicial) advices.push('督促履行法院判决，否则将列入失信被执行人名单');
+        if (hasAdmin) advices.push('核实行政处罚执行情况，防止再次违规');
+
+        if (ent['企业规模'] === '大型') {
+            advices.push('建议开展全面合规审计，排查关联风险');
+        } else if (ent['企业规模'] === '中型') {
+            advices.push('建议强化内部控制，规范财务管理');
+        } else if (ent['企业规模'] === '小型') {
+            advices.push('建议提供合规咨询，协助完善基础制度');
+        }
+        advices = [...new Set(advices)];
+        return advices.slice(0,6).join('；');
+    }
+
+    // ================================================================
+    // 模块10：模态框展示（风险企业、预警详情、待整改详情、优秀企业）
+    // ================================================================
+    window.showRiskList = function(){
+        const modal=document.getElementById('riskListModal');
+        const container=document.getElementById('riskListContainer');
+        const riskCompanies=scoredResults.filter(r=>r.grade==='信用风险');
+        if(riskCompanies.length===0){ container.innerHTML='<div class="text-muted" style="padding:20px;text-align:center;">暂无风险企业</div>'; return; }
+        let html='';
+        riskCompanies.forEach(r=>{
+            const name=String(r.ent['企业名称']||'未知');
+            const score=(r.totalScore*100).toFixed(1);
+            const dims = ['judicial','admin','official','qualification','innovation','stability'];
+            const dimNames = ['司法风险','行政合规','官方评价','资质合规','创新能力','经营稳定性'];
+            const allVals = dims.map(d => scoredResults.map(r2 => r2[d]));
+            const means = allVals.map(col => col.reduce((a,b)=>a+b,0)/col.length);
+            const stds = allVals.map(col => {
+                const mean = means[allVals.indexOf(col)];
+                return Math.sqrt(col.reduce((a,b)=>a+(b-mean)**2,0)/col.length);
+            });
+            let lowDims = [];
+            dims.forEach((d, idx) => {
+                const val = r[d];
+                const mean = means[idx];
+                const std = stds[idx];
+                if (std > 0 && val < mean - 1.5 * std) {
+                    lowDims.push(`${dimNames[idx]}(${(val*100).toFixed(1)})`);
+                }
+            });
+            const reason = lowDims.length > 0 ? `风险原因：${lowDims.join('、')}得分显著偏低` : '综合得分偏低，需关注';
+            const rectifyStatus = r.ent['整改状态']||'待整改';
+            const suggestion = generateSuggestion(r);
+            html+=`<div class="list-item-detailed" style="border-left-color:#ef4444;" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                        <div class="top-row">
+                            <span class="name">${name}</span>
+                            <span class="badge-level" style="background:#ef4444;color:white;">信用风险</span>
+                        </div>
+                        <div class="detail-row">
+                            <span>得分 ${score}</span>
+                            <span>整改: ${rectifyStatus}</span>
+                        </div>
+                        <div class="suggestion-row">${reason}</div>
+                        <div class="suggestion-row" style="border-left-color:#f59e0b;">💡 整改建议：${suggestion}</div>
+                    </div>`;
+        });
+        container.innerHTML=html;
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+    };
+    function closeRiskList(){ document.getElementById('riskListModal').classList.remove('active'); document.body.style.overflow=''; }
+    document.getElementById('riskListModal').addEventListener('click',function(e){ if(e.target===this) closeRiskList(); });
+
+    function showAlertList(){
+        const modal=document.getElementById('alertModal');
+        const container=document.getElementById('alertDetailContainer');
+        const district = getCurrentDistrict();
+        let filtered = scoredResults;
+        if(district) filtered = filtered.filter(r=> (r.ent['所属区县']||'') === district);
+        const alertItems = filtered.filter(r => r.abnormals && r.abnormals.length > 0 && r.riskProb >= 0.6);
+        alertItems.sort((a,b) => b.riskProb - a.riskProb);
+        if(alertItems.length===0){
+            container.innerHTML='<div class="text-muted" style="padding:20px;text-align:center;">暂无预警信息</div>';
+        } else {
+            let html='';
+            alertItems.forEach(r=>{
+                const name=String(r.ent['企业名称']||'未知');
+                const prob=(r.riskProb*100).toFixed(1);
+                let level='较低';
+                if(r.riskProb>=0.8) level='紧急';
+                else if(r.riskProb>=0.7) level='高';
+                else if(r.riskProb>=0.6) level='中';
+                else level='较低';
+                const alertReason = r.abnormals.join('；');
+                const suggestion = generateSuggestion(r);
+                // 使用 generateRegAdviceForPunish 获取具体监管措施，而不是占位符
+                const regAdvice = generateRegAdviceForPunish(r);
+                html+=`<div class="list-item-detailed" style="border-left-color:${level==='紧急'?'#ef4444':level==='高'?'#f59e0b':level==='中'?'#3b82f6':'#94a3b8'};" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <div class="top-row">
+                                <span class="name">${name}</span>
+                                <span class="badge-level" style="background:${level==='紧急'?'#ef4444':level==='高'?'#f59e0b':level==='中'?'#3b82f6':'#94a3b8'};color:white;">${level}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="tag">风险概率: ${prob}%</span>
+                            </div>
+                            <div class="detail-row" style="font-size:13px;color:#991b1b;background:#fee2e2;padding:4px 8px;border-radius:6px;">
+                                <strong>📌 预警原因：</strong>${alertReason}
+                            </div>
+                            <div class="suggestion-row">💡 企业建议: ${suggestion}</div>
+                            <div class="suggestion-row" style="border-left-color:#f59e0b;">🏛️ 监管建议: ${regAdvice}</div>
+                        </div>`;
+            });
+            container.innerHTML=html;
+        }
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+    }
+    function closeAlertModal(){ document.getElementById('alertModal').classList.remove('active'); document.body.style.overflow=''; }
+
+    function showRectifyList(){
+        const modal=document.getElementById('rectifyModal');
+        const container=document.getElementById('rectifyDetailContainer');
+        const district = getCurrentDistrict();
+        let filtered = scoredResults;
+        if(district) filtered = filtered.filter(r=> (r.ent['所属区县']||'') === district);
+        const rectifyList = filtered.filter(r => r.ent['整改状态'] === '待整改');
+        rectifyList.sort((a,b)=>{
+            const getLatest = (ent)=>{
+                const fields = ['被执行人_最近日期','失信被执行人_最近日期','限制消费令_最近日期',
+                    '终本案件_最近日期','司法案件_最近日期','行政处罚_最近日期'];
+                let latest=null;
+                for(const f of fields){
+                    const d=ent[f];
+                    if(d && d.length>=10){ const dt=new Date(d); if(!isNaN(dt) && (!latest||dt>latest)) latest=dt; }
+                }
+                return latest;
+            };
+            const da=getLatest(a.ent), db=getLatest(b.ent);
+            if(!da && !db) return 0;
+            if(!da) return 1;
+            if(!db) return -1;
+            return db - da;
+        });
+        if(rectifyList.length===0){
+            container.innerHTML='<div class="text-muted" style="padding:20px;text-align:center;">暂无待整改企业</div>';
+        } else {
+            let html='';
+            rectifyList.forEach(r=>{
+                const name=String(r.ent['企业名称']||'未知');
+                const score=(r.totalScore*100).toFixed(1);
+                const suggestion = generateSuggestion(r);
+                // 使用 generateRegAdviceForPunish 获取具体监管措施
+                const regAdvice = generateRegAdviceForPunish(r);
+                let typeParts = [];
+                const typeMap = {
+                    '被执行人_数量':'被执行人',
+                    '失信被执行人_数量':'失信被执行人',
+                    '限制消费令_数量':'限制消费令',
+                    '终本案件_数量':'终本案件',
+                    '司法案件_数量':'司法案件',
+                    '行政处罚_数量':'行政处罚'
+                };
+                for(const [key,label] of Object.entries(typeMap)){
+                    const val = getVal(r.ent,key,0);
+                    if(val>0) typeParts.push(`${label}(${val}件)`);
+                }
+                const typeStr = typeParts.join('、');
+                const reason = generateRectifyReason(r.ent);
+                html+=`<div class="list-item-detailed" style="border-left-color:#f59e0b;" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <div class="top-row">
+                                <span class="name">${name}</span>
+                                <span class="badge-level" style="background:#f59e0b;color:white;">待整改</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>得分 ${score}</span>
+                                <span>记录: ${typeStr}</span>
+                            </div>
+                            <div class="detail-row" style="font-size:13px;color:#92400e;background:#fef3c7;padding:4px 8px;border-radius:6px;">
+                                <strong>📌 整改原因：</strong>${reason}
+                            </div>
+                            <div class="suggestion-row">💡 企业建议: ${suggestion}</div>
+                            <div class="suggestion-row" style="border-left-color:#dc2626;">⚖️ 监管处罚措施: ${regAdvice}</div>
+                        </div>`;
+            });
+            container.innerHTML=html;
+        }
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+    }
+    function closeRectifyModal(){ document.getElementById('rectifyModal').classList.remove('active'); document.body.style.overflow=''; }
+
+    function showExcellentList(){
+        const modal=document.getElementById('excellentModal');
+        const container=document.getElementById('excellentContainer');
+        const list = scoredResults.filter(r => r.grade === '信用优良' && r.abnormals.length === 0 && r.ent['整改状态'] !== '待整改');
+        if(list.length===0){
+            container.innerHTML='<div class="text-muted" style="padding:20px;text-align:center;">暂无优秀企业</div>';
+        } else {
+            let html='';
+            list.forEach(r=>{
+                const name=String(r.ent['企业名称']||'未知');
+                const score=(r.totalScore*100).toFixed(1);
+                const reward = generateReward(r.ent, r);
+                html+=`<div class="list-item-detailed" style="border-left-color:#facc15;background:#fefce8;" onclick="openDetailPageByCode('${r.ent['统一社会信用代码']}')">
+                            <div class="top-row">
+                                <span class="name">${name}</span>
+                                <span class="badge-level" style="background:#facc15;color:#0f172a;">优秀</span>
+                            </div>
+                            <div class="detail-row">
+                                <span>得分 ${score}</span>
+                            </div>
+                            <div class="suggestion-row">🎁 ${reward}</div>
+                        </div>`;
+            });
+            container.innerHTML=html;
+        }
+        modal.classList.add('active');
+        document.body.style.overflow='hidden';
+    }
+    function closeExcellentModal(){ document.getElementById('excellentModal').classList.remove('active'); document.body.style.overflow=''; }
+
+    // ================================================================
+    // 模块11：预警阈值更新
+    // ================================================================
+    function updateThreshold(){
+        const val=parseFloat(document.getElementById('thresholdInput').value);
+        if(isNaN(val)||val<0||val>1){ alert('请输入 0~1 之间的数值'); return; }
+        riskThreshold=val;
+        const lrVars = ['诚实守信','信用承诺','变更记录_总数','法定代表人变更_次数','注册资本变更_次数',
+                        '商标_数量','专利_数量','资质证书_数量','资质证书_有效数量',
+                        '是否有食品生产许可证_数量','高新技术企业认定_数量'];
+        const allFeatureValues = scoredResults.map(r => lrVars.map(f => getVal(r.ent, f, 0)));
+        const featureScaled = [];
+        for(let j=0; j<lrVars.length; j++){
+            const vals = allFeatureValues.map(arr => arr[j]);
+            const min = Math.min(...vals);
+            const max = Math.max(...vals);
+            const range = max - min;
+            if(range === 0) featureScaled.push(vals.map(()=>0.5));
+            else featureScaled.push(vals.map(v => (v - min) / range));
+        }
+        for(let i=0; i<scoredResults.length; i++){
+            const features = featureScaled.map(arr => arr[i]);
+            const prob = logisticPredict(features);
+            scoredResults[i].riskProb = prob;
+            scoredResults[i].riskPredicted = prob >= riskThreshold ? 1 : 0;
+        }
+        updateAlertsAndRectify();
+        document.getElementById('thresholdHint').textContent = `当前 ${riskThreshold.toFixed(2)}`;
+        addQAMessage(`✅ 预警阈值已更新为 ${riskThreshold.toFixed(2)}。`,'bot');
+    }
+    function calcOptimalThreshold(){
+        document.getElementById('thresholdInput').value = '0.06';
+        document.getElementById('thresholdHint').textContent = '建议值 0.06（请点击“应用阈值”生效）';
+        addQAMessage('💡 已推荐阈值 0.06，请点击“应用阈值”按钮生效。','bot');
+    }
+
+    // ================================================================
+    // 模块12：上传、导出、手动添加
+    // ================================================================
+    function exportTemplate(){
+        let csv=ALL_FIELDS.join(',')+'\n';
+        csv+=ALL_FIELDS.map(()=>'').join(',')+'\n';
+        const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+        const link=document.createElement('a');
+        link.href=URL.createObjectURL(blob);
+        link.download='企业信用模板.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        document.getElementById('uploadStatus').textContent='✅ 模板已下载';
+    }
+
+    function getUpdateTimeFromUser(){
+        return new Promise((resolve)=>{
+            const wrapper = document.createElement('div');
+            wrapper.className = 'date-picker-wrapper';
+            wrapper.innerHTML = `
+                <div class="picker-row">
+                    <label style="font-weight:500;">数据更新时间：</label>
+                    <input type="date" id="customDatePicker" value="${new Date().toISOString().split('T')[0]}">
+                    <input type="time" id="customTimePicker" value="${new Date().toTimeString().slice(0,5)}">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-sm-primary" id="confirmDateBtn" style="padding:6px 20px;">确认</button>
+                    <button class="btn" id="cancelDateBtn" style="padding:6px 20px;background:#e2e8f0;">取消</button>
+                </div>
+            `;
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            const box = document.createElement('div');
+            box.style.cssText = 'background:white;padding:30px;border-radius:16px;max-width:400px;width:100%;';
+            box.innerHTML = `<h3 style="margin-bottom:16px;text-align:center;">选择数据更新时间</h3>`;
+            box.appendChild(wrapper);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            document.getElementById('confirmDateBtn').onclick = function(){
+                const date = document.getElementById('customDatePicker').value;
+                const time = document.getElementById('customTimePicker').value;
+                if(date){
+                    const result = date + ' ' + (time || '00:00');
+                    document.body.removeChild(overlay);
+                    resolve(result);
+                } else {
+                    alert('请选择日期');
+                }
+            };
+            document.getElementById('cancelDateBtn').onclick = function(){
+                document.body.removeChild(overlay);
+                resolve(null);
+            };
+            overlay.addEventListener('click', function(e){ if(e.target===overlay){ document.body.removeChild(overlay); resolve(null); } });
+        });
+    }
+
+    function handleUpload(event){
+        const file=event.target.files[0];
+        if(!file) return;
+        const errorDiv=document.getElementById('uploadError');
+        errorDiv.className='error-msg'; errorDiv.textContent='';
+        getUpdateTimeFromUser().then(updateTime=>{
+            if(updateTime===null){ event.target.value=''; return; }
+            loadingOverlay.classList.add('active');
+            const reader=new FileReader();
+            reader.onload=function(e){
+                try{
+                    let data=[];
+                    const ext=file.name.split('.').pop().toLowerCase();
+                    if(ext==='csv'){ data=parseCSV(e.target.result); }
+                    else if(ext==='xlsx'||ext==='xls'){
+                        const workbook=XLSX.read(e.target.result,{type:'array'});
+                        const sheet=workbook.Sheets[workbook.SheetNames[0]];
+                        const json=XLSX.utils.sheet_to_json(sheet,{defval:''});
+                        data=json.map(row=>{ const obj={}; for(const key in row) obj[key]=row[key]!==undefined?String(row[key]):''; return obj; });
+                    } else { throw new Error('不支持的文件格式'); }
+                    if(data.length===0) throw new Error('未解析到数据');
+                    data=data.filter(row=>row['企业名称']&&row['企业名称'].trim());
+                    if(data.length===0) throw new Error('没有有效的企业数据');
+                    document.getElementById('uploadStatus').textContent='✅ 已上传 '+data.length+' 家企业 ('+file.name+')';
+                    loadData(data, updateTime);
+                    addQAMessage('📊 已加载 '+data.length+' 家企业，更新时间 '+updateTime,'bot');
+                } catch(err){
+                    errorDiv.className='error-msg show';
+                    errorDiv.textContent='❌ '+err.message;
+                    document.getElementById('uploadStatus').textContent='⚠️ 上传失败';
+                    loadingOverlay.classList.remove('active');
+                }
+            };
+            if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
+            else reader.readAsArrayBuffer(file);
+            event.target.value='';
+        });
+    }
+
+    function parseCSV(text){
+        const lines=text.split('\n').filter(line=>line.trim());
+        if(lines.length<2) throw new Error('文件为空');
+        const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+        const data=[];
+        for(let i=1;i<lines.length;i++){
+            const vals=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+            const obj={};
+            for(let j=0;j<headers.length;j++) obj[headers[j]]=vals[j]||'';
+            data.push(obj);
+        }
+        return data;
+    }
+
+    function openAddModal(){
+        const grid=document.getElementById('addFormGrid');
+        grid.innerHTML='';
+        const fields = ALL_FIELDS.map(f=>({key:f, required: ['企业名称','所属区县','统一社会信用代码'].includes(f)}));
+        fields.forEach(f=>{
+            const div=document.createElement('div'); div.className='field';
+            const label=document.createElement('label');
+            label.innerHTML = f.key + (f.required ? ' <span class="required">*</span>' : '');
+            const input=document.createElement('input');
+            input.type='text';
+            input.id='add_'+f.key;
+            input.placeholder = f.required ? '必填' : '选填';
+            div.appendChild(label);
+            div.appendChild(input);
+            grid.appendChild(div);
+        });
+        document.getElementById('addModal').classList.add('active');
+        document.body.style.overflow='hidden';
+    }
+    function closeAddModal(){ document.getElementById('addModal').classList.remove('active'); document.body.style.overflow=''; }
+    function submitManualAdd(){
+        const obj={};
+        for(const f of ALL_FIELDS){
+            const el=document.getElementById('add_'+f);
+            if(el) obj[f]=el.value.trim();
+            else obj[f]='';
+        }
+        if(!obj['企业名称']||!obj['所属区县']||!obj['统一社会信用代码']){ alert('请填写必填字段: 企业名称、所属区县、统一社会信用代码'); return; }
+        if(allEnterprises.some(e=>e['统一社会信用代码']===obj['统一社会信用代码'])){ alert('该统一社会信用代码已存在'); return; }
+        allEnterprises.push(obj);
+        closeAddModal();
+        getUpdateTimeFromUser().then(updateTime=>{
+            if(updateTime){ dataUpdateTime=updateTime; document.getElementById('dataUpdateDisplay').textContent='数据更新时间: '+updateTime; }
+            loadData(allEnterprises, dataUpdateTime);
+            addQAMessage('✅ 已手动添加企业 “'+obj['企业名称']+'”','bot');
+        });
+    }
+
+    function loadSampleData(){
+        const sample = generateSampleData(20);
+        document.getElementById('uploadStatus').textContent='📊 已加载 '+sample.length+' 家示例企业';
+        const now=new Date().toISOString().slice(0,10)+' '+new Date().toTimeString().slice(0,5);
+        loadData(sample, now);
+        addQAMessage('📊 已加载 '+sample.length+' 家示例企业数据。','bot');
+        document.getElementById('loadSampleBtn').classList.add('hidden-btn');
+    }
+
+    // ================================================================
+    // 模块13：部门协同上传
+    // ================================================================
+    function departmentUpload(){ document.getElementById('deptModal').classList.add('active'); document.body.style.overflow='hidden'; }
+    function closeDeptModal(){ document.getElementById('deptModal').classList.remove('active'); document.body.style.overflow=''; }
+    function downloadDeptTemplate(){ exportTemplate(); }
+    function handleDeptUpload(event){
+        const file=event.target.files[0];
+        if(!file) return;
+        loadingOverlay.classList.add('active');
+        const reader=new FileReader();
+        reader.onload=function(e){
+            try{
+                let data=[];
+                const ext=file.name.split('.').pop().toLowerCase();
+                if(ext==='csv'){ data=parseCSV(e.target.result); }
+                else if(ext==='xlsx'||ext==='xls'){
+                    const workbook=XLSX.read(e.target.result,{type:'array'});
+                    const sheet=workbook.Sheets[workbook.SheetNames[0]];
+                    const json=XLSX.utils.sheet_to_json(sheet,{defval:''});
+                    data=json.map(row=>{ const obj={}; for(const key in row) obj[key]=row[key]!==undefined?String(row[key]):''; return obj; });
+                } else { throw new Error('不支持的文件格式'); }
+                if(data.length===0) throw new Error('未解析到数据');
+                data=data.filter(row=>row['企业名称']&&row['企业名称'].trim());
+                if(data.length===0) throw new Error('没有有效的企业数据');
+                let merged=0, added=0;
+                data.forEach(deptEnt=>{
+                    const code=deptEnt['统一社会信用代码'];
+                    if(code){
+                        const exist=allEnterprises.find(e=>e['统一社会信用代码']===code);
+                        if(exist){
+                            for(const key in deptEnt){ if(deptEnt[key]&&deptEnt[key].trim()!=='') exist[key]=deptEnt[key]; }
+                            merged++;
+                        } else { allEnterprises.push(deptEnt); added++; }
+                    } else { allEnterprises.push(deptEnt); added++; }
+                });
+                document.getElementById('deptStatus').textContent=`✅ 部门数据已合并: 更新 ${merged} 家, 新增 ${added} 家`;
+                const now=new Date().toLocaleString('zh-CN',{hour12:false}).replace(/\//g,'-');
+                loadData(allEnterprises, now);
+                addQAMessage(`📊 部门数据已协同，合并 ${merged} 家，新增 ${added} 家。`,'bot');
+                setTimeout(()=>{ closeDeptModal(); }, 1500);
+            } catch(err){
+                document.getElementById('deptStatus').textContent='❌ '+err.message;
+                loadingOverlay.classList.remove('active');
+            }
+        };
+        if(file.name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
+        else reader.readAsArrayBuffer(file);
+        event.target.value='';
+    }
+
+    // ================================================================
+    // 模块14：详情页
+    // ================================================================
+    function openDetailPage(ent) {
+        const page = document.getElementById('detailPage');
+        document.getElementById('detailPageTitle').textContent = ent['企业名称'] || '企业详情';
+        const content = document.getElementById('detailPageContent');
+        const scored = scoredResults.find(r => r.ent === ent);
+        if (!scored) { content.innerHTML = '<p>未找到数据</p>'; return; }
+
+        const score = (scored.totalScore * 100).toFixed(1);
+        const grade = scored.grade;
+        const isRisk = grade === '信用风险';
+        const riskText = isRisk ? '⚠️ 风险' : '✅ 合规';
+        const rectify = ent['整改状态'] || '无';
+        const deadline = ent['整改期限'] || '-';
+        const reward = generateReward(ent, scored);
+
+        // 风险原因（橙色）
+        let riskReasonHtml = '';
+        if (grade === '信用风险') {
+            const dims = ['judicial','admin','official','qualification','innovation','stability'];
+            const dimNames = ['司法风险','行政合规','官方评价','资质合规','创新能力','经营稳定性'];
+            const allVals = dims.map(d => scoredResults.map(r2 => r2[d]));
+            const means = allVals.map(col => col.reduce((a,b)=>a+b,0)/col.length);
+            const stds = allVals.map(col => {
+                const mean = means[allVals.indexOf(col)];
+                return Math.sqrt(col.reduce((a,b)=>a+(b-mean)**2,0)/col.length);
+            });
+            let lowDims = [];
+            dims.forEach((d, idx) => {
+                const val = scored[d];
+                const mean = means[idx];
+                const std = stds[idx];
+                if (std > 0 && val < mean - 1.5 * std) {
+                    lowDims.push(`${dimNames[idx]}（${(val*100).toFixed(1)}分）`);
+                }
+            });
+            if (lowDims.length > 0) {
+                riskReasonHtml = `<div class="risk-reason"><strong>⚠️ 风险原因：</strong>${lowDims.join('、')}得分显著偏低，导致被归为信用风险等级。</div>`;
+            } else {
+                riskReasonHtml = `<div class="risk-reason"><strong>⚠️ 风险原因：</strong>综合信用得分偏低，需全面排查经营风险。</div>`;
+            }
+        }
+
+        // 预警原因（红色）
+        let alertReasonHtml = '';
+        if (scored.abnormals && scored.abnormals.length > 0 && scored.riskProb >= 0.6) {
+            alertReasonHtml = `<div class="alert-reason"><strong>🔔 预警原因：</strong>${scored.abnormals.join('；')}</div>`;
+        }
+
+        // 整改原因（黄色）
+        let rectifyReasonHtml = '';
+        const reason = generateRectifyReason(ent);
+        if (reason !== '近一年无新增违规记录') {
+            rectifyReasonHtml = `<div class="rectify-reason">
+                <span><strong>📋 整改原因：</strong>${reason}</span>
+                ${rectify === '待整改' ? `<button class="btn btn-sm-success" onclick="if(confirm('确认标记该企业为已整改？此操作仅限监管部门执行。')) { markRectified('${ent['统一社会信用代码']}'); closeDetailPage(); }">标记已整改</button>` : ''}
+            </div>`;
+        }
+
+        // 监管处罚措施（蓝色）
+        let punishHtml = '';
+        if (rectify === '待整改') {
+            const adv = generateRegAdviceForPunish(scored);
+            punishHtml = `<div class="punish-reason"><strong>⚖️ 监管处罚措施：</strong>${adv}</div>`;
+        }
+
+        // 整改状态与整改期限合并（紫色）
+        let statusHtml = `<div class="status-reason">
+            <span><strong>🔄 整改状态：</strong>${rectify}</span>
+            <span><strong>📅 整改期限：</strong>${deadline}</span>
+        </div>`;
+
+        // 奖励措施（绿色）
+        let rewardHtml = `<div class="reward-reason"><strong>🎁 奖励措施：</strong>${reward}</div>`;
+
+        // 企业改进建议和部门监管建议
+        const suggestionHtml = generateSuggestion(scored);
+        // 在详情页中，由于已有 punishHtml，部门监管建议不再显示（通过条件隐藏）
+        const regAdviceHtml = generateRegAdviceForPunish(scored); // 仅用于非待整改时可能显示，但我们隐藏了
+
+        // 构建HTML
+        let html = `
+            <div class="detail-score-area">
+                <span class="big-score">综合得分: ${score} 分</span>
+                <span class="big-grade" style="background:${grade==='信用优良'?'#22c55e':grade==='信用一般'?'#3b82f6':grade==='信用关注'?'#f59e0b':'#ef4444'};">${grade}</span>
+                <span class="big-risk">${riskText}</span>
+            </div>
+            <div class="detail-section">
+                <h4><i class="fas fa-gavel"></i> 监管与奖惩及改进建议</h4>
+                ${riskReasonHtml}
+                ${alertReasonHtml}
+                ${rectifyReasonHtml}
+                ${punishHtml}
+                ${statusHtml}
+                ${rewardHtml}
+                <div style="margin-top:16px;border-top:1px solid rgba(0,0,0,0.06);padding-top:16px;">
+                    <div class="detail-suggestion"><strong>💡 企业改进建议：</strong>${suggestionHtml}</div>
+                    ${!punishHtml ? `<div class="detail-suggestion" style="border-left-color:#f59e0b;margin-top:8px;"><strong>🏛️ 部门监管建议：</strong>${regAdviceHtml}</div>` : ''}
+                </div>
+            </div>
+            <div class="detail-section">
+                <h4><i class="fas fa-chart-pie"></i> 维度得分</h4>
+                <div class="detail-grid-3">
+                    <div class="item"><span class="label">司法风险</span><span class="value">${(scored.judicial*100).toFixed(1)}</span></div>
+                    <div class="item"><span class="label">行政合规</span><span class="value">${(scored.admin*100).toFixed(1)}</span></div>
+                    <div class="item"><span class="label">官方评价</span><span class="value">${(scored.official*100).toFixed(1)}</span></div>
+                    <div class="item"><span class="label">资质合规</span><span class="value">${(scored.qualification*100).toFixed(1)}</span></div>
+                    <div class="item"><span class="label">创新能力</span><span class="value">${(scored.innovation*100).toFixed(1)}</span></div>
+                    <div class="item"><span class="label">经营稳定性</span><span class="value">${(scored.stability*100).toFixed(1)}</span></div>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h4><i class="fas fa-list-ul"></i> 全部字段</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:13px;">
+        `;
+        for (const key in ent) {
+            if (ent.hasOwnProperty(key)) {
+                let val = ent[key];
+                if (val === null || val === undefined) val = '--';
+                html += `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04);"><span style="color:#64748b;">${key}</span><span style="font-weight:500;text-align:right;word-break:break-all;max-width:60%;">${val}</span></div>`;
+            }
+        }
+        html += `</div></div>`;
+        content.innerHTML = html;
+        page.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        ['riskListModal','alertModal','rectifyModal','excellentModal','heatmapModal','trendModal','searchResultModal'].forEach(id => {
+            document.getElementById(id).classList.remove('active');
+        });
+    }
+
+    function closeDetailPage(){ document.getElementById('detailPage').classList.remove('active'); document.body.style.overflow=''; }
+
+    // ================================================================
+    // 模块15：智能问答模块
+    // ================================================================
+    const qaMessages = document.getElementById('qaMessages');
+    let qaContext = [];
+    function updateQAContext(){ qaContext = scoredResults.map(r => ({name: String(r.ent['企业名称']||''), code: String(r.ent['统一社会信用代码']||''), score: r.totalScore, grade: r.grade, riskProb: r.riskProb, riskPred: r.riskPredicted, ent: r.ent})); }
+    function askQuestion(){
+        const input = document.getElementById('qaInput');
+        const q = input.value.trim();
+        if(!q) return;
+        input.value = '';
+        addQAMessage(q, 'user');
+        const answer = processQA(q);
+        setTimeout(() => addQAMessage(answer, 'bot'), 300);
+    }
+    function addQAMessage(text, type){
+        const div = document.createElement('div');
+        div.className = 'qa-msg ' + type;
+        div.innerHTML = text;
+        qaMessages.appendChild(div);
+        qaMessages.scrollTop = qaMessages.scrollHeight;
+    }
+
+    const QA_RULES = [
+        {keywords: ['企业名称','公司','厂','合作社','有限公司','集团','股份'], type:'enterprise'},
+        {keywords: ['雁峰','石鼓','珠晖','蒸湘','南岳','衡阳','衡南','衡山','衡东','祁东','耒阳','常宁','总体','区县','分布','统计'], type:'district'},
+        {keywords: ['风险','预警','危险','违约','失信','被执行人','处罚','案件','诉讼','仲裁'], 
+         response: '⚠️ 信用风险预警：系统基于Logistic回归识别负向指标异常。若企业存在被执行人、失信被执行人、行政处罚、司法案件等记录，或变更频繁，则触发预警。建议监管部门及时介入，企业应积极履行法定义务，减少法律纠纷。'},
+        {keywords: ['整改','修正','纠正','修复','改进措施','整改建议','如何整改'], 
+         response: '🔧 整改建议：针对存在司法或行政违规记录的企业，建议（1）立即履行判决或处罚决定；（2）完善内部合规制度；（3）定期自查，防止再次违规。具体可查看企业详情页中的“整改原因”和“监管处罚措施”。'},
+        {keywords: ['奖励','惩罚','激励','惩戒','绿色通道','黑名单','财政补贴','优先推荐','奖惩','奖励措施'], 
+         response: '🎁 奖励措施：信用优良且无违规企业享受行政审批绿色通道、财政补贴优先、政府采购优先推荐、银行信贷优惠利率等激励；信用风险或待整改企业将面临重点监管、限制享受优惠政策、列入黑名单等惩戒。具体措施根据企业信用等级和违规情况动态匹配。'},
+        {keywords: ['监管','检查','执法','约谈','监测','抽查','重点','如何监管'], 
+         response: '🏛️ 监管建议：对信用风险企业实施重点监管，增加检查频次；对信用关注企业纳入日常监测，要求提交整改计划；对信用优良企业给予绿色通道，减少干扰。利用平台实时预警，动态调整监管策略。'},
+        {keywords: ['提升','改进','优化','如何改善','怎么提高','增强','信用修复'], 
+         response: '💡 企业信用提升路径：（1）减少司法纠纷，履行判决义务；（2）遵守行政规定，避免处罚；（3）提高诚信意识，履行信用承诺；（4）完善资质证书，确保有效；（5）加大创新投入，申请专利商标；（6）稳定经营，减少变更。具体建议请查看企业详情页。'},
+        {keywords: ['逻辑回归','logistic','聚类','k-means','算法','模型','系数','权重','AHP','熵权法'], 
+         response: '📊 算法说明：综合信用评分采用AHP（一级权重）和熵权法（二三级权重）；分层采用K-means聚类（k=4）；风险预警采用Logistic回归。'},
+        {keywords: ['阈值','截断','判定','cutoff'], 
+         response: '⚙️ 预警阈值默认0.06，可手动调节。阈值越低，被判定为预警的企业越多；阈值越高，仅高概率企业被标记。'},
+        {keywords: ['热力图','区县分布','可视化','地图','区域'], 
+         response: '🗺️ 热力图展示各区县不同信用等级的企业数量，颜色深浅代表数量多少。点击任意色块可查看该区县该等级的企业列表。'},
+        {keywords: ['趋势','预测','走势','平滑','指数'], 
+         response: '📈 风险趋势基于近三年各企业“最近日期”字段统计事件数，采用指数平滑法（α=0.3）预测未来走向。点击折线节点可查看具体事件详情。'},
+        {keywords: ['排行榜','排名','top','优秀','提升','前50','后50'], 
+         response: '🏆 排行榜展示信用得分最高和待提升的前后50家企业。点击企业可查看详情。'},
+        {keywords: ['上传','导入','下载模板','手动添加','部门上传','Excel','CSV','文件','批量上传'], 
+         response: '📁 数据管理支持上传Excel/CSV，下载模板，手动添加企业，部门数据协同推送。上传时需选择数据更新时间，系统自动计算信用得分和等级。'},
+        {keywords: ['优秀','标杆','示范','榜样'], 
+         response: '🌟 优秀企业是指信用等级为“信用优良”且无任何风险记录的企业。这些企业享受绿色通道、财政补贴、优先推荐等激励措施。点击顶部“优秀企业”徽章可查看完整列表。'},
+        {keywords: ['待整改','整改中','整改企业','违规'], 
+         response: '⏳ 待整改企业是指近一年内有司法或行政违规记录且尚未完成整改的企业。监管部门应督促其限期整改。点击顶部“待整改”徽章可查看完整列表。'},
+        {keywords: ['平均风险','概率','风险概率','可能性','预警概率'], 
+         response: '📊 平均风险概率是指所有被判定为预警企业（有负向异常且概率≥0.6）的风险概率均值，反映当前预警企业的整体风险水平。该值在“预警阈值”卡片中显示。'},
+        {keywords: ['雷达图','维度','六维','对比'], 
+         response: '📊 雷达图展示四个信用等级在六个维度（司法风险、行政合规、官方评价、资质合规、创新能力、经营稳定性）上的平均得分。'},
+        {keywords: ['首页','大屏','总览','概览'], 
+         response: '🏠 大屏首页包含区县风险热力图、信用得分排行榜、风险趋势、各等级维度雷达图，以及预警、高风险、待整改三张卡片，方便您快速掌握整体信用状况。'},
+    ];
+
+    function processQA(q){
+        const lower = q.toLowerCase().trim();
+        const matchedEnterprises = qaContext.filter(r=>{
+            const name = String(r.name||'').toLowerCase();
+            const code = String(r.code||'').toLowerCase();
+            return name.includes(lower) || code.includes(lower) || lower.includes(name) || lower.includes(code);
+        });
+        if(matchedEnterprises.length>0){
+            if(matchedEnterprises.length===1){
+                const item = matchedEnterprises[0];
+                const name = item.name||'该企业';
+                const score = (item.score*100).toFixed(1);
+                const grade = item.grade||'未分类';
+                const isRisk = item.riskPred===1;
+                const abnormal = item.ent['整改原因'] || '';
+                let parts = [`<strong>${name}</strong>`];
+                parts.push(`📊 综合信用得分: <strong>${score}</strong> 分 (等级: ${grade})`);
+                if(isRisk){ parts.push(`⚠️ 预警`); } else { parts.push(`✅ 合规`); }
+                const rectify = item.ent['整改状态']||'无';
+                const reward = generateReward(item.ent, item);
+                parts.push(`🔧 整改状态: ${rectify}`);
+                parts.push(`🎁 奖励措施: ${reward}`);
+                if(abnormal && abnormal !== '企业信用良好，暂无整改项'){
+                    parts.push(`📋 整改原因: ${abnormal}`);
+                }
+                const suggestion = generateSuggestion(item);
+                parts.push(`💡 改进建议: ${suggestion}`);
+                return parts.join('<br>');
+            } else {
+                let listHtml = '找到多家企业，请输入更精确的名称：<br>';
+                matchedEnterprises.slice(0,5).forEach(r=>{ listHtml+=`• ${r.name} (${r.code})<br>`; });
+                if(matchedEnterprises.length>5) listHtml+=`... 共 ${matchedEnterprises.length} 家`;
+                return listHtml;
+            }
+        }
+
+        const districtMatch = lower.match(/(雁峰|石鼓|珠晖|蒸湘|南岳|衡阳|衡南|衡山|衡东|祁东|耒阳|常宁)/);
+        if(districtMatch && (lower.includes('总体')||lower.includes('区县')||lower.includes('统计'))){
+            const dName = districtMatch[1] + '市';
+            const filtered = scoredResults.filter(r=>{
+                const dist = r.ent['所属区县']||'';
+                return dist.includes(districtMatch[1]);
+            });
+            if(filtered.length===0) return `未找到 ${dName} 的企业数据。`;
+            const total = filtered.length;
+            const gradeCount = {'信用优良':0,'信用一般':0,'信用关注':0,'信用风险':0};
+            let sumScore=0;
+            filtered.forEach(r=>{ gradeCount[r.grade]=(gradeCount[r.grade]||0)+1; sumScore+=r.totalScore; });
+            const avgScore = (sumScore/total*100).toFixed(1);
+            const riskCount = gradeCount['信用风险']||0;
+            return `<strong>${dName}总体情况</strong><br>企业总数: ${total}<br>平均信用得分: ${avgScore}<br>信用优良: ${gradeCount['信用优良']}, 信用一般: ${gradeCount['信用一般']}, 信用关注: ${gradeCount['信用关注']}, 信用风险: ${riskCount}<br>风险占比: ${(riskCount/total*100).toFixed(1)}%`;
+        }
+
+        let matchedRule = null;
+        let maxMatchLen = 0;
+        for(const rule of QA_RULES){
+            if(rule.type === 'enterprise' || rule.type === 'district') continue;
+            for(const kw of rule.keywords){
+                if(lower.includes(kw) && kw.length > maxMatchLen){
+                    maxMatchLen = kw.length;
+                    matchedRule = rule;
+                }
+            }
+        }
+        if(matchedRule) return matchedRule.response;
+
+        return '🤔 我理解您的问题，但可能需要更具体。您可以尝试：<br>• 输入企业名称查询（支持模糊）<br>• 输入“耒阳市总体”查看区县统计<br>• 输入“如何提升”、“监管”、“奖惩”、“预警”等关键词获取信息';
+    }
+
+    // ================================================================
+    // 模块16：说明页面（已删除）
+    // ================================================================
+    function showAbout(){ /* 已删除 */ }
+    function closeAbout(){ /* 已删除 */ }
+
+    // ================================================================
+    // 模块17：初始化
+    // ================================================================
+    setTimeout(() => {
+        const sample = generateSampleData(20);
+        const now = new Date().toISOString().slice(0,10)+' '+new Date().toTimeString().slice(0,5);
+        loadData(sample, now);
+        document.getElementById('uploadStatus').textContent='📊 已加载 '+sample.length+' 家示例企业';
+    }, 100);
+
+    window.addEventListener('resize',()=>{
+        if(heatmapChart) heatmapChart.resize();
+        if(trendChart) trendChart.resize();
+        if(radarChart) radarChart.resize();
+    });
+    console.log;
+    </script>
+</body>
+</html>
